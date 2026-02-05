@@ -181,8 +181,8 @@ block append scripts
           Notifier.danger(erreur.data);
         }); 
       }
-      $scope.view_school = function(id_school){
-        $window.location.href ="/school/"+id_school;
+      $scope.view_school = function(school_id){
+        $window.location.href ="/school/"+school_id;
       }
       $scope.deleteSchool = function(school_id,school_name){
         swal({

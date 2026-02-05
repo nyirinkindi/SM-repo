@@ -19,7 +19,7 @@ block append content
                   i.material-icons school
                 .card-content
                   p.category Total classes
-                  h3.card-title: a(href="/dashboard.classe/"+school_id) 
+                  h3.card-title: a(href="/dashboard/classe/"+school_id) 
                     | #{info.classes_ol} O Level
                     br
                     | #{info.classes_al} A Level
@@ -86,7 +86,7 @@ block append content
                   .text-center
                     | M: Male,
                     | F:Female
-                    a(href="/dashboard.classe/"+school_id)
+                    a(href="/dashboard/classe/"+school_id)
                       h3.pull-right #{all_users} users
 block append scripts
   script(src="../js/MIT/MIT_sweetalert2.js", type="text/javascript")

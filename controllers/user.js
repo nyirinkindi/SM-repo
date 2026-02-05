@@ -30,7 +30,7 @@ exports.googleAuth = (req, res, next)=>{
 exports.googleCallback = (req, res, next)=>{
   passport.authenticate('google',{
     successRedirect:'/',
-    failureRedirect:'/user.signin'
+    failureRedirect:'/auth/signin'
   }, (err, user, info)=>{
     if(err || !user) return res.status(400).send(info.msg);
     req.logIn(user, (err,newUser) => {
@@ -61,7 +61,7 @@ exports.googleCallback = (req, res, next)=>{
 exports.fbCallback = (req, res, next)=>{
   passport.authenticate('facebook',{
     successRedirect:'/',
-    failureRedirect:'/user.signin'
+    failureRedirect:'/auth/signin'
   }, (err, user, info)=>{
     if(err || !user) return res.status(400).send(info.msg);
     req.logIn(user, (err,newUser) => {
@@ -90,77 +90,47 @@ exports.fbCallback = (req, res, next)=>{
   })(req, res, next);
 }
 exports.postSignIn = (req, res, next) => {
-  // console.log('______________'+res.locals.csrftoken);
-  req.assert('email', 'Email is not valid').isEmail();
-  req.assert('password', 'Password cannot be blank').notEmpty();
-  const errors = req.validationErrors();
-  if (errors) return res.status(400).send(errors[0].msg);
+  passport.authenticate('local.signin', (err, user, info) => {
+    if (err || !user) {
+      return res.status(400).send(info?.msg || 'Login failed');
+    }
 
-  passport.authenticate('local.signin', (err, user, info)=>{
-    if(err || !user) return res.status(400).send(info.msg);
-    console.log("after");
-    req.logIn(user, (err,newUser) => {
+    req.logIn(user, err => {
       if (err) return next(err);
-      var hours = 3600000;
-      var weeks = 7 * 24 * hours;    
-      // Cookie expires after 1 week and 10 hours > REgister mornig expires night
-      // first 9h du mat then expires the night
-      // console.log(' New USer '+JSON.stringify(user))
-      req.session.cookie.maxAge = 1 * weeks + 10*hours;
-      var link =req.user.access_level==1 ? "/dashboard":"/home";
-      if(req.user.access_level ==req.app.locals.access_level.HOD){
-        School.find({department_id:req.user.department_id},(err,schools_managed)=>{
-          if(err) return log_err(err,false,req,res);
-          else if(!schools_managed) return res.status(400).send("Sorry, you do not have a school yet !");
-          else if(!Array.isArray(schools_managed) || schools_managed.length==0)
-            return res.status(400).send("Sorry, you do not have a school yet !");
-          req.session.currentOption=schools_managed[0]._id;
-          req.session.save();  
-          return res.send(link);         
-        })
+
+      const hours = 3600000;
+      const weeks = 7 * 24 * hours;
+
+      req.session.cookie.maxAge = weeks + 10 * hours;
+
+      const link =
+        req.user.access_level === 1 ? '/dashboard' : '/home';
+
+      if (req.user.access_level === req.app.locals.access_level.HOD) {
+        School.find({ department_id: req.user.department_id }, (err, schools) => {
+          if (err) return log_err(err, false, req, res);
+          if (!schools?.length) {
+            return res.status(400).send('Sorry, you do not have a school yet!');
+          }
+          req.session.currentOption = schools[0]._id;
+          req.session.save(() => res.send(link));
+        });
+      } else {
+        return res.send(link);
       }
-      else return res.send(link);     
     });
-    // console.log(' New logIn------ '+JSON.stringify(req.logIn))
   })(req, res, next);
 };
+
 exports.postOfflineSignIn = (req, res, next) => {
-  // console.log('HE POSTED BODY '+JSON.stringify(req.body));
-  // console.log('HE POSTED HEADERS '+JSON.stringify(req.headers));
-  // console.log('HE POSTED PARAMS'+JSON.stringify(req.params));
-  // console.log('HE POSTED QUERY'+JSON.stringify(req.query));
+  passport.authenticate('local.signin', (err, user, info) => {
+    if (err || !user) {
+      return res.status(400).send(info?.msg || 'Login failed');
+    }
 
-  req.assert('email', 'Email is not valid').isEmail();
-  req.assert('password', 'Password cannot be blank').notEmpty();
-  
-  const errors = req.validationErrors();
-  // console.log('Yienze '+errors[0].msg);
-  if (errors) return res.status(400).send(errors[0].msg);
-
-  passport.authenticate('local.signin', (err, user, info)=>{
-    if(err || !user) return res.status(400).send(info.msg);
-    req.logIn(user, (err,newUser) => {
+    req.logIn(user, err => {
       if (err) return next(err);
-      var hours = 3600000;
-      var weeks = 7 * 24 * hours;    
-      // Cookie expires after 1 week and 10 hours > REgister mornig expires night
-      // first 9h du mat then expires the night
-      // console.log('OFFLINE USER '+JSON.stringify(req.session));
-      return ;
-      req.session.cookie.maxAge = 1 * weeks + 10*hours;
-      var link =req.user.access_level==1 ? "/dashboard":"/home";
-      if(req.user.access_level ==req.app.locals.access_level.HOD){
-        School.find({department_id:req.user.department_id},(err,schools_managed)=>{
-          if(err) return log_err(err,false,req,res);
-          else if(!schools_managed) return res.status(400).send("Sorry, you do not have a school yet !");
-          else if(!Array.isArray(schools_managed) || schools_managed.length==0)
-            return res.status(400).send("Sorry, you do not have a school yet !");
-          req.session.currentOption=schools_managed[0]._id;
-          req.session.save();  
-          return res.send(link);         
-        })
-      }
-      else return res.send(link);     
+      return res.end();
     });
   })(req, res, next);
 };
@@ -174,11 +144,11 @@ exports.getPageSignUp = (req, res) => {
 };
 exports.createSA = (req, res, next)=>{
   var newUser = new User({
-    name:'Akimana Jean dAmour',
-    email: 'a.k.imanaja17@gmail.com',
-    URN: 'aja-3016',
-    password: '$2a$10$uhZLxu3V40X0IVGBjKrbzOIb4TsM8qAVcanWvnMHVAAaqgYVDweLq',
-    phone_number:'0783543016',
+    name:'nyirinkindi',
+    email: 'nyirinkindimarcel@gmail.com',
+    URN: 'nym-1626',
+    password: '$2y$10$F827x5NhPLDZhxCu.zEfZOhpaAK5Cdenfty1759ZqdLG9SfJrwnDG',
+    phone_number:'0788468334',
     access_level:1,
     gender:1,
     isEnabled:true,
@@ -337,30 +307,28 @@ exports.userList_JSON=(req,res,next)=>{
     })
   })
 }
-exports.deleteCmply=(req, res,next)=>{
-  req.assert('user_id', 'Invalid data').isMongoId();
-  req.assert('password', 'Enter your password').notEmpty();
-  const errors = req.validationErrors();
-  if (errors) return res.status(400).send(errors[0].msg);
-  User.findOne({email:req.user.email},(err, userExists)=>{
-    if(err) return log_err(err, false, req, res);
-    else if(!userExists) return res.status(400).send("System dont know you");
-    userExists.comparePassword(req.body.password, req.user.email, (err, isMatch)=>{
-      if(err) return log_err(err, false, req, res);
-      else if(!isMatch) return res.status(400).send("Password given is incorrect !");
-      User.findOne({_id:req.body.user_id},(err, userDetails)=>{
-        if(err) return log_err(err, false, req, res);
-        else if(!userDetails) return res.status(400).send("Unkown user");
-        else if(userDetails.email===req.user.email) return res.status(400).send("Change your password using platform seting");
-        else if(userDetails.access_level<=req.user.access_level) return res.status(400).send("User password has not reset");
-        userDetails.remove((err)=>{
-          if(err) return log_err(err, false, req, res);
-          return res.end();
+exports.deleteCmply = (req, res) => {
+  User.findOne({ email: req.user.email }, (err, admin) => {
+    if (err) return log_err(err, false, req, res);
+    if (!admin) return res.status(400).send('System does not know you');
+
+    admin.comparePassword(req.body.password, req.user.email, (err, match) => {
+      if (!match) return res.status(400).send('Password incorrect');
+
+      User.findById(req.body.user_id, (err, target) => {
+        if (!target) return res.status(400).send('Unknown user');
+        if (target.email === req.user.email)
+          return res.status(400).send('Change your own password instead');
+
+        target.remove(err => {
+          if (err) return log_err(err, false, req, res);
+          res.end();
         });
-      })
-    })
-  })
-}
+      });
+    });
+  });
+};
+
 exports.resetUserPwd=(req,res,next)=>{
   req.assert('user_id', 'Invalid data').isMongoId();
   req.assert('password', 'Enter your password').notEmpty();
@@ -452,9 +420,54 @@ exports.viewPageUserDetails=(req,res,next)=>{
   })
 }
 exports.logout = (req, res) => {
-  req.session.destroy()
-  req.logout();
-  res.redirect('/user.signin');
+  try {
+    const userName = req.user?.name || req.user?.email || 'User';
+    
+    console.log(`👋 ${userName} logging out...`);
+
+    // Logout with callback (required in Passport.js 0.6.0+)
+    req.logout((err) => {
+      if (err) {
+        console.error('Error during logout:', err);
+        return res.status(500).send('Error logging out');
+      }
+
+      // Destroy session
+      req.session.destroy((sessionErr) => {
+        if (sessionErr) {
+          console.error('Error destroying session:', sessionErr);
+        }
+
+        // Clear cookie
+        res.clearCookie('connect.sid');
+        
+        console.log(`✅ ${userName} logged out successfully`);
+
+        // Check if it's an AJAX request
+        if (req.xhr || req.headers.accept?.indexOf('json') > -1) {
+          return res.json({
+            success: true,
+            message: 'Logged out successfully',
+            redirect: '/auth/signin'
+          });
+        }
+
+        // Redirect for regular requests
+        res.redirect('/auth/signin');
+      });
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    
+    if (req.xhr || req.headers.accept?.indexOf('json') > -1) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error logging out'
+      });
+    }
+    
+    res.redirect('/auth/signin');
+  }
 };
 exports.getPageUserSettings = (req,res)=>{
     res.render('user/settings', {
@@ -706,7 +719,7 @@ exports.getValidateYourAccount = (req,res,next)=>{
     else if( (Date.now() - new Date(token_exists.created_at).getTime())/1000 > 3* 60 *60 )     
       return res.render("./lost",{
         msg:"Your link has expired, please try again",
-        redirect_link:"/user.signin"
+        redirect_link:"/auth/signin"
     }) 
     else {
       User.findOne({email:req.query.m},(err,userExists)=>{
@@ -717,7 +730,7 @@ exports.getValidateYourAccount = (req,res,next)=>{
         userExists.save((err)=>{
           return res.render("./lost",{
             msg:"Congratulations, your account has been validated",
-            redirect_link:"/user.signin",
+            redirect_link:"/auth/signin",
             mood:"success",
           });
           new Notification({

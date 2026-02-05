@@ -534,7 +534,7 @@ block append scripts
 							buttonsStyling: false
 						})
 						$scope.nvUser =null;
-						setTimeout(function(){$window.location.href="/user.signin"},5000)
+						setTimeout(function(){$window.location.href="/auth/signin"},5000)
 					})
 					.catch(function(erreur){
 						Notifier.danger(erreur.data);

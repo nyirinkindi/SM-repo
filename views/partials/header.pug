@@ -17,14 +17,14 @@
 		#myNav.collapse.navbar-collapse.navbar-ex1-collapse
 			ul.nav.navbar-nav.pull-right
 				if access > 1 && access <=4
-					li: a.btn-simple.btn.btn-info(style='color:#f05167;',href="/timeline")
+					li: a.btn-simple.btn.btn-info(style='color:##4CAF50;',href="/timeline")
 						//i.material-icons web_asset
 						strong Eshuri Wall
 					li: a.btn-simple.btn.btn-success(style='color:#3d4958;',href="/school")
 						//i.material-icons school
 						strong My school
 				if access <= 4 && access != 1
-					li: a.btn-simple.btn.btn-success(style='color:#f05167;',href="/library")
+					li: a.btn-simple.btn.btn-success(style='color:##4CAF50;',href="/library")
 						//i.material-icons book
 						strong Library
 				if access ==4
@@ -32,7 +32,7 @@
 						//i.material-icons school
 						strong My parents 
 				if access ==5
-					li: a.btn-simple.btn.btn-success(style='color:#f05167;',href="/parent")
+					li: a.btn-simple.btn.btn-success(style='color:##4CAF50;',href="/parent")
 						//i.material-icons school
 						strong My Students
 				//Only admins has dashboard
@@ -42,7 +42,7 @@
 						strong Dashboard
 				if access >=1.1 && access <=4
 					li.dropdown
-						a.btn-simple.btn.btn-info.dropdown-toggle(style='color:#f05167;',data-toggle="dropdown")
+						a.btn-simple.btn.btn-info.dropdown-toggle(style='color:##4CAF50;',data-toggle="dropdown")
 							strong Reports
 						ul.dropdown-menu
 							if access == 4||access==2.1||access==2||access==1.1
@@ -81,7 +81,7 @@
 					strong Robotics Programming
 				// payment
 				if access==1.1
-					li: a.btn-simple.btn.btn-info(href="/dashboard.director")
+					li: a.btn-simple.btn.btn-info(href="/dashboard/director")
 						strong Dir. Dash
 				//- li: a.btn-simple.btn.btn-info(href="/payment")
 				li: a.btn-simple.btn.btn-info(href="/payment")
@@ -109,7 +109,7 @@
 									| New account
 							li.divider
 							li
-								a(href="/user.signin")
+								a(href="/auth/signin")
 									i.material-icons person
 									| Login
 						if access
@@ -138,14 +138,14 @@ nav.navbar.navbar-default.navbar-fixed-top
 		#navbar.navbar-collapse.collapse
 			ul.nav.navbar-nav
 				if access > 1 && access <=4
-					li: a.btn-simple(style='color:#f05167;',href="/timeline")
+					li: a.btn-simple(style='color:##4CAF50;',href="/timeline")
 						//i.material-icons web_asset
 						strong Eshuri Wall
 					li: a(style='color:#3d4958;',href="/school")
 						//i.material-icons school
 						strong My classes
 				if access <= 4 && access != 1
-					li: a(style='color:#f05167;',href="/library")
+					li: a(style='color:##4CAF50;',href="/library")
 						//i.material-icons book
 						strong Library
 				if access ==4
@@ -153,7 +153,7 @@ nav.navbar.navbar-default.navbar-fixed-top
 						//i.material-icons school
 						strong My parents 
 				if access ==5
-					li: a(style='color:#f05167;',href="/parent")
+					li: a(style='color:##4CAF50;',href="/parent")
 						//i.material-icons school
 						strong My Students
 				//Only admins has dashboard
@@ -163,7 +163,7 @@ nav.navbar.navbar-default.navbar-fixed-top
 						strong Dashboard
 				if access >=1.1 && access <=4
 					li.dropdown
-						a.dropdown-toggle(style='color:#f05167;',data-toggle="dropdown")
+						a.dropdown-toggle(style='color:##4CAF50;',data-toggle="dropdown")
 							strong Reports
 						ul.dropdown-menu
 							if access == 4||access==2.1||access==2||access==1.1||access==3
@@ -203,7 +203,7 @@ nav.navbar.navbar-default.navbar-fixed-top
 					strong Robotics Programming
 				// payment
 				if access==1.1
-					li: a(href="/dashboard.director")
+					li: a(href="/dashboard/director")
 						strong Dir. pa
 				//- li: a(href="/payment")
 					strong Payment
@@ -231,7 +231,7 @@ nav.navbar.navbar-default.navbar-fixed-top
 										| New account
 								li.divider
 								li
-									a(href="/user.signin")
+									a(href="/auth/signin")
 										i.material-icons person
 										| Login
 							if access

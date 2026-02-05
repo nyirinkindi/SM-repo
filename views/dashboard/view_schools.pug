@@ -1,0 +1,223 @@
+extends ../layout
+
+block append content 
+  .wrapper.wrapper-full-page(ng-controller="schoolsManagementCtrl")
+    .content
+      .container-fluid
+        //- Header
+        .row
+          .col-md-12
+            .card
+              .card-header.card-header-rose.card-header-icon
+                .card-icon
+                  i.material-icons school
+                h4.card-title Schools Management
+                  span.btn-simple.btn.label.btn-info.ml-3
+                    i.icon.ion-ios-star
+                    |  Super Admin
+              .card-content
+                p.text-muted System-wide schools overview and management
+
+        //- Statistics Row
+        .row
+          .col-md-3
+            .card.card-stats
+              .card-header.card-header-icon(data-background-color="orange")
+                i.material-icons school
+              .card-content
+                p.category Total Schools
+                h3.card-title #{stats.totalSchools}
+              .card-footer
+                .stats
+                  i.material-icons info
+                  |  Active institutions
+
+          .col-md-3
+            .card.card-stats
+              .card-header.card-header-icon(data-background-color="green")
+                i.material-icons people
+              .card-content
+                p.category Total Students
+                h3.card-title #{stats.totalStudents}
+              .card-footer
+                .stats
+                  i.material-icons trending_up
+                  |  Across all schools
+
+          .col-md-3
+            .card.card-stats
+              .card-header.card-header-icon(data-background-color="blue")
+                i.material-icons person
+              .card-content
+                p.category Total Teachers
+                h3.card-title #{stats.totalTeachers}
+              .card-footer
+                .stats
+                  i.material-icons group
+                  |  Active educators
+
+          .col-md-3
+            .card.card-stats
+              .card-header.card-header-icon(data-background-color="red")
+                i.material-icons warning
+              .card-content
+                p.category Need Attention
+                h3.card-title #{stats.schoolsWithIssues}
+              .card-footer
+                .stats
+                  i.material-icons info
+                  |  Schools with &lt;10 users
+
+        //- Schools List
+        .row
+          .col-md-12
+            .card
+              .card-header.card-header-icon.card-header-rose
+                .card-icon
+                  i.material-icons list
+                h4.card-title All Schools
+              .card-content
+                //- Search and Filter
+                .row
+                  .col-md-6
+                    .form-group
+                      input.form-control(
+                        type="text" 
+                        ng-model="searchText" 
+                        placeholder="Search schools by name or location..."
+                      )
+                  .col-md-3
+                    .form-group
+                      select.form-control(ng-model="filterCategory")
+                        option(value="") All Categories
+                        option(value="1") Day School
+                        option(value="2") Boarding
+                        option(value="3") Mixed
+                  .col-md-3
+                    button.btn.btn-success.btn-raised(
+                      ng-click="refreshSchools()"
+                    )
+                      i.material-icons refresh
+                      |  Refresh
+
+                //- Loading Indicator
+                .text-center(ng-if="loading")
+                  .progress
+                    .progress-bar.progress-bar-striped.active(
+                      role="progressbar" 
+                      style="width: 100%"
+                    ) Loading schools...
+
+                //- Schools Table
+                .table-responsive(ng-if="!loading")
+                  table.table.table-hover
+                    thead
+                      tr
+                        th #
+                        th School Name
+                        th Location
+                        th Type
+                        th Users
+                        th Actions
+                    tbody
+                      tr(ng-if="filteredSchools.length === 0")
+                        td.text-center(colspan="6") No schools found
+                      tr(ng-repeat="school in filteredSchools = (schools | filter:searchText | filter:{category: filterCategory || undefined}) track by school._id")
+                        td {{$index + 1}}
+                        td
+                          strong {{school.name}}
+                        td {{school.district_name}}
+                        td
+                          span.label.label-info(ng-if="school.category == 1") Day
+                          span.label.label-success(ng-if="school.category == 2") Boarding
+                          span.label.label-warning(ng-if="school.category == 3") Mixed
+                        td
+                          span.badge {{school.numUsers || 0}}
+                        td
+                          button.btn.btn-sm.btn-info.btn-simple(
+                            ng-click="viewSchool(school)"
+                            title="View School Details"
+                          )
+                            i.material-icons visibility
+                            |  View
+                          button.btn.btn-sm.btn-rose.btn-simple(
+                            ng-click="manageSchool(school)"
+                            title="Manage School"
+                          )
+                            i.material-icons settings
+                            |  Manage
+
+                //- Pagination Info
+                .row(ng-if="!loading")
+                  .col-md-12
+                    p.text-muted.text-center
+                      | Showing {{filteredSchools.length}} of {{schools.length}} schools
+
+block append scripts
+  script(src="../js/MIT/MIT_sweetalert2.js" type="text/javascript")
+  script.
+    var app = angular.module('eshuri_App', ['ngRoute']);
+    
+    app.controller('schoolsManagementCtrl', function($scope, $http, $window) {
+      console.log('🏫 Schools management controller initialized');
+      
+      // Initialize
+      $scope.loading = true;
+      $scope.schools = [];
+      $scope.filteredSchools = [];
+      $scope.searchText = '';
+      $scope.filterCategory = '';
+      $scope.anti_csrf = "#{csrf_token}";
+
+      /**
+       * Load all schools
+       */
+      $scope.loadSchools = function() {
+        console.log('📡 Loading schools list...');
+        $scope.loading = true;
+        
+        $http.get('/school/list')
+          .then(function(response) {
+            console.log('✅ Schools loaded:', response.data.length);
+            $scope.schools = response.data;
+            $scope.loading = false;
+          })
+          .catch(function(error) {
+            console.error('❌ Error loading schools:', error);
+            $scope.loading = false;
+            
+            swal({
+              type: 'error',
+              title: 'Error',
+              html: 'Failed to load schools: ' + (error.data || error.statusText)
+            });
+          });
+      };
+
+      /**
+       * View school details and classes
+       */
+      $scope.viewSchool = function(school) {
+        console.log('🎯 Viewing school:', school.name, 'ID:', school._id);
+        $window.location.href = '/school/' + school._id;
+      };
+
+      /**
+       * Manage school (go to school dashboard)
+       */
+      $scope.manageSchool = function(school) {
+        console.log('⚙️ Managing school:', school.name, 'ID:', school._id);
+        $window.location.href = '/dashboard/school/home/' + school._id;
+      };
+
+      /**
+       * Refresh schools list
+       */
+      $scope.refreshSchools = function() {
+        $scope.loadSchools();
+      };
+
+      // Load schools on initialization
+      console.log('🚀 Initializing schools management...');
+      $scope.loadSchools();
+    });

@@ -1,97 +1,136 @@
 /**
- * Module dependencies.
+ * eShuri Express Server
+ * Modernized for Node.js v24 + Redis v4 + MongoDB + Passport
  */
+
 const express = require('express');
-const compression = require('compression');
-const session = require('express-session');
-const bodyParser = require('body-parser');
-const logger = require('morgan');
-const errorHandler = require('errorhandler');
-const dotenv = require('dotenv');
-const redis= require("redis");
-const Redis_Store = require('connect-redis')(session);
 const path = require('path');
-const mongoose = require('mongoose');
-const passport = require('passport');
-const flash = require('express-flash');
-//const sass = require('node-sass-middleware');
+const dotenv = require('dotenv');
+
+// Load environment variables first
+dotenv.config({ path: path.join(__dirname, '.env') });
+
+// Import configuration modules
+const { validateEnvironment } = require('./config/environment');
+const { connectMongoDB } = require('./config/database');
+const { createRedisClient } = require('./config/redis');
+const { configureMiddleware } = require('./config/middleware');
+const { configureSession } = require('./config/session');
+const { setupRoutes } = require('./routes');
+const { gracefulShutdown } = require('./config/shutdown');
+
 /**
- * Load environment variables from .env file, where API keys and passwords are configured.
+ * Validate critical environment variables
  */
- dotenv.load({ path: '.eShuri.env.DEV'});
+validateEnvironment();
+
 /**
- * API keys and Passport configuration.
- */
-require('./config/passport')(passport);
-/**
- * Create Express server.
+ * Create Express application
  */
 const app = express();
+app.set('port', process.env.PORT || 6800);
+
 /**
- * Connect to MongoDB.
+ * Connect to databases
  */
-mongoose.connect(process.env.MONGODB_URI,{
-  useMongoClient: true,
-});
-mongoose.Promise = global.Promise;
-mongoose.connection.on('error', () => {
-  console.error('MongoDB Connection Error. Please make sure that MongoDB is running.');
-  process.exit(1);
-});
+connectMongoDB();
+const redisClient = createRedisClient();
+
 /**
- * Express configuration.
+ * Configure Express settings
  */
-app.set('port', process.env.PORT || 6000);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
-app.locals.pretty=process.env.devStatus =='DEV'
+app.locals.pretty = process.env.devStatus !== 'PROD';
 
-app.use(compression());
-// app.use(sass({
-//   src: path.join(__dirname, 'public'),
-//   dest: path.join(__dirname, 'public')
-// }));
-// app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-var hours = 3600000;
-var weeks = 7 * 24 * hours;
-app.use(session({
-  resave: true,
-  saveUninitialized: true,//but u should require permission before setting a cookie. 
-  secret: process.env.SESSION_SECRET,
-  name : 'PHPSESSID',     // Simulate Php cookie
-  //When still not connected the cookie will live 2 hours
-  cookie:{ path: '/', httpOnly: true, secure: false, maxAge: 2*hours },
-  store: new Redis_Store({ 
-      host: process.env.REDIS_HOST,
-      port: process.env.REDIS_PORT,
-      // ttl : 2 * weeks,
-      pass: process.env.REDIS_SECRET,
-      prefix:process.env.REDIS_PREFIX,
-      name: process.env.REDIS_NAME 
-    }),
-}));
+/**
+ * Apply middleware (security, parsing, validation, etc.)
+ */
+configureMiddleware(app);
+
+/**
+ * Configure sessions with Redis
+ */
+configureSession(app, redisClient);
+
+/**
+ * Setup Passport authentication
+ */
+const passport = require('passport');
+require('./config/passport')(passport);
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(flash());
+app.use(require('express-flash')());
 
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: 2*hours }));
-console.log(__dirname);
-/* SOME CONSTANTS in the application*/
-require('./constants')(app);
-/* Security Modules  down here*/
-require('./config/security')(app);
-require('./socket_io')(app); // ans atrt the server here
-require('./routes')(app);
 /**
- * Error Handler.
+ * Application constants and security
  */
-app.use(errorHandler());
-module.exports = app;
-// Demo credentials
-// student email: student1@demo.rw
-// admin email: teacher2@demo.rw
-//
-// Both Password: eshuri123
-// Reset pwd: MyEshuri
+require('./constants')(app);
+require('./config/security')(app);
+
+/**
+ * Create HTTP server
+ */
+const server = require('http').createServer(app);
+
+/**
+ * Initialize Socket.IO
+ */
+const io = require('./socket_io')(server, app);
+
+/**
+ * Setup all application routes
+ */
+const mainRoutes = require('./routes');
+mainRoutes(app);
+
+/**
+ * Error handling
+ */
+if (process.env.devStatus !== 'PROD') {
+  app.use(require('errorhandler')({ log: true }));
+} else {
+  app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(err.status || 500).render('error', {
+      message: 'An error occurred',
+      error: {},
+    });
+  });
+}
+
+/**
+ * Graceful shutdown handlers
+ */
+process.on('SIGTERM', () => gracefulShutdown(server, redisClient));
+process.on('SIGINT', () => gracefulShutdown(server, redisClient));
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+/**
+ * Start server
+ */
+const PORT = app.get('port');
+
+server.listen(PORT, () => {
+  console.log('\n========================================');
+  console.log('🚀 eShuri Server Started Successfully');
+  console.log('========================================');
+  console.log(`Port:        ${PORT}`);
+  console.log(`URL:         http://127.0.0.1:${PORT}`);
+  console.log(`Environment: ${process.env.devStatus || 'DEVELOPMENT'}`);
+  console.log(`Node:        ${process.version}`);
+  console.log('========================================\n');
+});
+
+server.on('error', err => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  } else {
+    console.error('Server error:', err);
+  }
+  process.exit(1);
+});
+
+module.exports = { app, server };

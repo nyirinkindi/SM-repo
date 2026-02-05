@@ -1,71 +1,201 @@
-.sidebar(style="position:fixed;")
-	.logo
-		.avatar
-			img(src='/favicon.png', alt='...',width="100%",height="auto")
-		a.navbar-brand(href="/") eShuri Platform
-	.sidebar-wrapper
-		ul.nav.navbar-nav
-			if access > 1
-				li: a.btn-simple.btn.label.btn-info(href="/timeline")
-					i.material-icons web_asset
-					| Eshuri Wall
-			if access > 1 && access!=5
-				li: a.btn-simple.btn.label.btn-success(href="/school")
-					i.material-icons school
-					| My school
-			if access <= 4 && access != 1
-				li: a.btn-simple.btn.label.btn-success(href="/library")
-					i.material-icons book
-					| Library
-			if access ==4
-				li: a.btn-simple.btn.label.btn-success(href="/parents")
-					i.material-icons school
-					| My parents 
-			if access ==5
-				li: a.btn-simple.btn.label.btn-success(href="/parent")
-					i.material-icons school
-					| Select Student
-			//Only admins has dashboard
-			if access <= 2.1
-				li: a.btn-simple.btn.label.btn-warning(href="/dashboard")
-					i.material-icons dashboard
-					| Dashboard
-			if access == 4
-				li: a(href="/report/"+pic_id)
-					i.material-icons local_activity
-					| My report
-			li: a(href="http://gocoderz.com/wp-content/uploads/articulate_uploads/Lesson_1:_Drivetrain/story_html5.html" target="_blank")
-					i.material-icons code
-					| Robotics Programming
-			li.dropdown
-				if access
-					a.btn-simple.btn.label.btn-info.dropdown-toggle(data-toggle="dropdown")
-						i.material-icons person
-						| {{'#{pic_name}'|| 'Account'|uppercase}}
-				if !access
-					a.btn-simple.btn.label.btn-info.dropdown-toggle(data-toggle="dropdown")
-						i.material-icons person
-						| New Account
-				ul.dropdown-menu
-					if access
-						li
-							a(href="/user.settings")
-								i.material-icons settings
-								| Change your settings
-					if !access
-						li.divider
-						li
-							a(href="/user.signup")
-								i.material-icons person
-								| New account
-						li.divider
-						li
-							a(href="/user.signin")
-								i.material-icons person
-								| Login
-					if access
-						li.divider
-						li
-							a(href="/user.logout")
-								i.material-icons face
-								| Logout
+//- views/partials/navbar.pug
+//- Reusable navigation bar for all authenticated pages
+
+nav.navbar.navbar-default.navbar-fixed-top(style="background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);")
+  .container-fluid
+    .navbar-header
+      button.navbar-toggle.collapsed(type="button", data-toggle="collapse", data-target="#main-navbar")
+        span.sr-only Toggle navigation
+        span.icon-bar
+        span.icon-bar
+        span.icon-bar
+      
+      a.navbar-brand(href="/dashboard", style="font-weight: 600; color: #667eea;")
+        i.material-icons(style="vertical-align: middle; margin-right: 5px;") school
+        | eShuri
+    
+    #main-navbar.collapse.navbar-collapse
+      //- Left side menu
+      ul.nav.navbar-nav
+        if user && user.access_level === 1
+          //- Super Admin Menu
+          li.dropdown
+            a.dropdown-toggle(href="#", data-toggle="dropdown", role="button")
+              i.material-icons school
+              |  Schools 
+              span.caret
+            ul.dropdown-menu
+              li: a(href="/school/list/dashboard")
+                i.material-icons list
+                |  All Schools
+              li: a(href="/school/add")
+                i.material-icons add
+                |  Add School
+              li.divider
+              li: a(href="/dashboard/universities")
+                i.material-icons account_balance
+                |  Universities
+          
+          li.dropdown
+            a.dropdown-toggle(href="#", data-toggle="dropdown", role="button")
+              i.material-icons people
+              |  Users 
+              span.caret
+            ul.dropdown-menu
+              li: a(href="/user/view")
+                i.material-icons list
+                |  All Users
+              li: a(href="/dashboard/pending-users")
+                i.material-icons hourglass_empty
+                |  Pending Approvals
+                if typeof pendingCount !== 'undefined' && pendingCount > 0
+                  span.badge.badge-danger(style="margin-left: 5px;")= pendingCount
+          
+          li: a(href="/dashboard/content")
+            i.material-icons folder
+            |  Content Library
+        
+        else if user && user.access_level >= 2
+          //- School Admin / Teacher Menu
+          li: a(href="/dashboard")
+            i.material-icons dashboard
+            |  Dashboard
+          
+          li: a(href=`/school/${user.school_id}`)
+            i.material-icons school
+            |  My School
+          
+          if user.access_level <= 3
+            //- Admin & Teacher
+            li: a(href=`/school/${user.school_id}/classes`)
+              i.material-icons class
+              |  Classes
+            
+            li: a(href=`/school/${user.school_id}/courses`)
+              i.material-icons book
+              |  Courses
+      
+      //- Right side menu
+      ul.nav.navbar-nav.navbar-right
+        //- Notifications
+        li.dropdown
+          a.dropdown-toggle(href="#", data-toggle="dropdown", role="button")
+            i.material-icons notifications
+            if typeof notificationCount !== 'undefined' && notificationCount > 0
+              span.badge.badge-danger= notificationCount
+          ul.dropdown-menu.dropdown-menu-right(style="width: 300px; max-height: 400px; overflow-y: auto;")
+            li.dropdown-header Notifications
+            if typeof notifications !== 'undefined' && notifications.length > 0
+              each notification in notifications
+                li
+                  a(href="#", style="white-space: normal; padding: 10px 15px;")
+                    small.text-muted= notification.created_at
+                    p(style="margin: 5px 0;")= notification.content
+            else
+              li: a No new notifications
+            li.divider
+            li: a.text-center(href="/notifications") View All
+        
+        //- User dropdown
+        li.dropdown
+          a.dropdown-toggle(href="#", data-toggle="dropdown", role="button")
+            if user && user.profile_picture
+              img(src=`/user/pp/view/${user._id}`, style="width: 30px; height: 30px; border-radius: 50%; margin-right: 5px;")
+            else
+              i.material-icons(style="vertical-align: middle;") account_circle
+            if user
+              |  #{user.name}
+            span.caret
+          
+          ul.dropdown-menu.dropdown-menu-right
+            li.dropdown-header
+              if user
+                strong= user.email
+                br
+                small Role: 
+                  if user.access_level === 1
+                    | Super Admin
+                  else if user.access_level === 1.1
+                    | School Admin
+                  else if user.access_level === 2
+                    | Admin
+                  else if user.access_level === 3
+                    | Teacher
+                  else if user.access_level === 4
+                    | Student
+                  else if user.access_level === 5
+                    | Parent
+            
+            li.divider
+            
+            li: a(href="/user/settings")
+              i.material-icons settings
+              |  Settings
+            
+            li: a(href="/dashboard")
+              i.material-icons dashboard
+              |  Dashboard
+            
+            if user && user.access_level === 1
+              li: a(href="/dashboard/statistics")
+                i.material-icons bar_chart
+                |  Statistics
+            
+            li.divider
+            
+            li: a(href="#", onclick="confirmLogout(); return false;", style="color: #f44336;")
+              i.material-icons exit_to_app
+              |  Logout
+
+//- Logout confirmation script
+script.
+  function confirmLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+      // Create a form and submit
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/user/logout';
+      
+      // Add CSRF token if available
+      if (typeof csrfToken !== 'undefined') {
+        var csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = '_csrf';
+        csrf.value = csrfToken;
+        form.appendChild(csrf);
+      }
+      
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+
+//- Add spacing for fixed navbar
+style.
+  body {
+    padding-top: 70px;
+  }
+  .navbar-default .navbar-nav > li > a {
+    color: #333;
+    transition: all 0.3s;
+  }
+  .navbar-default .navbar-nav > li > a:hover {
+    color: #667eea;
+    background: #f8f9fa;
+  }
+  .navbar-default .navbar-nav > .active > a {
+    color: #667eea;
+    background: #f8f9fa;
+  }
+  .navbar .material-icons {
+    vertical-align: middle;
+    margin-right: 5px;
+    font-size: 20px;
+  }
+  .badge-danger {
+    background-color: #f44336;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+  }

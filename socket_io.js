@@ -1,96 +1,256 @@
-/*BEst tuto :
-https://www.packtpub.com/books/content/adding-real-time-functionality-using-socketio
-*/
-var num_clients=0;
-const Message =require('./models/Message'),
-    Util =require("./utils"),
-    User =require('./models/User');
-module.exports = function(app) {
-  // INITIALISTION
-  var server = require('http').createServer(app);
-  var io = require('socket.io').listen(app.listen(app.get('port'), () => {
-    console.log('Express server listening on port %d in %s mode', 
-    app.get('port'),app.get('env'));
-    console.log("Web app link = http://127.0.0.1:"+app.get('port'));
-    console.log(" Attention is not validated in automated.js at currentItem.p and currentItem.m")
-    console.log(" TAKE CARE so that when we delete a user we will not have duplicate URN.because is based on user number..");
-    console.log(" REMEMBER TO ADD DEPARTEMTN in Signup page ")
-    console.log("=>Remember to SEEK about anti XSRF SameSite: Lax or Strict cookie!")
-    console.log("=>Remember to IMPLEMENT Email validation when signing UP !")
-    console.log("=>Remember to CHECK for performance optimization with async in controller for some functions")
-    console.log("=>Remember to VERIFY the data sent back to user check with  by example the __v:0")
-    console.log("=>Remember to SCHEDULE for - Delete Old tokens")
-    console.log("=>Remember to VERIFY the deletion en cascade")
-    console.log("=>Remember to CHECK exports.getPageOneCourse  for course_id is valid in course controller")
-    console.log("______________________________________________")
-    console.log(" IF STUDENT CHANGES SCHOOL ..??? what ?")
-    console.log("=====>Paisible rescan book 'LE RESEAU DU FRANCAIS'");
-    console.log(" you should remove academic year in the attirbutes of CONTENT. not necessary..")
-    console.log("=====>Remember to validate date not using isDate() cause it will not work on=>Test ->(new and edit)")
-    console.log(" Add view page for 3 4 et 7 content type.. OPTIONAL")
-    console.log("level: 5, ADD LEVEL in automated MARKS in postAnswers !!!");
-    console.log(" return moment(time).fromNow(); itanga a warning attention depreaction vuba");
-    console.log("====> REMEMBER KWIMURA STUDENTS IS ONLY APPLIED FOR SECONDARY SCHOOL<=====")
-    console.log("====> UPLOAD FILE FOR STUDENTS<=====")
-    console.log("----->SUPPERADMIN must be DIRECTOR OF SCHOOL<-------")
-    console.log('______________________________________________')
-  }));
-  /* Get some information*/
-  io.use((socket, next)=>{
-    //console.log(" Socket info = "+JSON.stringify(socket.request.headers));
-    console.log(" Check if the COOKIE IS a valid cookie !!");
-    console.log(" This is where all the security is relying... !!");
-    next(null, true);
+/**
+ * socket_io.js
+ * Socket.IO configuration for real-time functionality
+ * Modernized for Socket.IO v4+ and async/await
+ */
+
+const { Server } = require('socket.io');
+const Message = require('./models/Message');
+const User = require('./models/User');
+const Util = require('./utils');
+
+let num_clients = 0;
+
+/**
+ * Initialize Socket.IO with the HTTP server
+ * @param {http.Server} server - HTTP server instance
+ * @param {Express.App} app - Express app instance (for reference)
+ */
+module.exports = function(server, app) {
+  
+  /**
+   * Create Socket.IO instance
+   */
+  const io = new Server(server, {
+    cors: {
+      origin: process.env.CORS_ORIGIN || '*', // Configure in production
+      methods: ['GET', 'POST'],
+      credentials: true,
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
-  console.log("```````````````````````````````````````````````")
-  io.on('connection', (socket)=>{
-    socket.on('connect', (eventData)=>{
-      clients.push(socket);
-    });
-    socket.on('join', (data)=>{
+
+  /**
+   * Socket.IO middleware for authentication
+   */
+  io.use((socket, next) => {
+    const sessionID = socket.handshake.auth.sessionID;
+    
+    if (process.env.devStatus === 'DEV') {
+      console.log('Socket connection attempt:', {
+        id: socket.id,
+        sessionID: sessionID || 'none',
+      });
+    }
+
+    // TODO: Add proper session/token validation here
+    // For now, allow all connections
+    next();
+  });
+
+  /**
+   * Handle new socket connections
+   */
+  io.on('connection', (socket) => {
+    console.log(`✓ Client connected: ${socket.id}`);
+
+    /**
+     * Join user's personal room
+     */
+    socket.on('join', (data) => {
+      if (!data?.myID) {
+        console.warn('Join attempt without myID');
+        return;
+      }
+
       num_clients++;
-      socket.join(data.myID);// join his ID as room name 
+      socket.join(data.myID);
+      
+      if (process.env.devStatus === 'DEV') {
+        console.log(`User ${data.myID} joined their room. Total clients: ${num_clients}`);
+      }
     });
-    socket.on('leave', (data)=>{
+
+    /**
+     * Leave user's personal room
+     */
+    socket.on('leave', (data) => {
+      if (!data?.myID) {
+        console.warn('Leave attempt without myID');
+        return;
+      }
+
       num_clients--;
-      socket.leave(data.myID);// join his ID as room name
+      socket.leave(data.myID);
+      
+      if (process.env.devStatus === 'DEV') {
+        console.log(`User ${data.myID} left their room. Total clients: ${num_clients}`);
+      }
     });
-    socket.on('new_message', (data)=>{
-      // We receive, msg:$scope.newMsg,from:'#{pic_id}',dest:$scope.interlocutor._id})
-      // Send to the guy that is inthe ROOM
-      var async = require("async");
-      async.parallel([
-        (callback)=>{ // chek sender
-          User.findOne({_id:data.from},(err,exists)=>{
-            if(err) return callback(err);
-            else if(!exists) return callback("Not exists");
-            callback(null);
-          })
-        },(callback)=>{ //check detination exists
-          User.findOne({_id:data.dest},(err,exists)=>{
-            if(err) return callback(err);
-            else if(!exists) return callback("Not exists");
-            callback(null);
-          })
+
+    /**
+     * Handle new message - Modernized with async/await
+     */
+    socket.on('new_message', async (data) => {
+      try {
+        // Validate data
+        if (!data?.from || !data?.dest || !data?.msg) {
+          socket.emit('msg_failed', {
+            ...data,
+            error: 'Missing required fields (from, dest, msg)',
+          });
+          return;
         }
-      ],(err)=>{ // if all is ok then save to DB 
-        if(err) io.sockets.in(data.from).emit('msg_failed', data)
-        //get the conversation ID
-        new Message({
-          conv_id:Util.getConv_id(data.from,data.dest), //creata an ID
-          msg:data.msg,
-          from:data.from,
-          dest:data.dest,
-        }).save((err)=>{
-          if(err) io.sockets.in(data.from).emit('msg_failed', data)
-          // console.log("OKAY "+data.dest)
-          // Message sent
-          io.sockets.in(data.dest).emit('new_message', data)
-        })
-      })
+
+        // Check if sender exists
+        const sender = await User.findById(data.from).exec();
+        if (!sender) {
+          socket.emit('msg_failed', {
+            ...data,
+            error: 'Sender does not exist',
+          });
+          return;
+        }
+
+        // Check if recipient exists
+        const recipient = await User.findById(data.dest).exec();
+        if (!recipient) {
+          socket.emit('msg_failed', {
+            ...data,
+            error: 'Recipient does not exist',
+          });
+          return;
+        }
+
+        // Create and save message
+        const newMessage = new Message({
+          conv_id: Util.getConv_id(data.from, data.dest),
+          msg: data.msg,
+          from: data.from,
+          dest: data.dest,
+          timestamp: new Date(),
+        });
+
+        await newMessage.save();
+
+        // Emit to recipient's room
+        io.to(data.dest).emit('new_message', {
+          ...data,
+          _id: newMessage._id,
+          timestamp: newMessage.timestamp,
+        });
+
+        // Confirm to sender
+        socket.emit('msg_sent', {
+          ...data,
+          _id: newMessage._id,
+          timestamp: newMessage.timestamp,
+        });
+
+        if (process.env.devStatus === 'DEV') {
+          console.log(`Message sent from ${data.from} to ${data.dest}`);
+        }
+
+      } catch (error) {
+        console.error('Error handling new_message:', error);
+        socket.emit('msg_failed', {
+          ...data,
+          error: error.message || 'Failed to send message',
+        });
+      }
     });
-    socket.on('disconnect', ()=>{
+
+    /**
+     * Handle typing indicator
+     */
+    socket.on('typing', (data) => {
+      if (!data?.from || !data?.dest) return;
+      
+      io.to(data.dest).emit('user_typing', {
+        from: data.from,
+        isTyping: true,
+      });
+    });
+
+    /**
+     * Handle stop typing indicator
+     */
+    socket.on('stop_typing', (data) => {
+      if (!data?.from || !data?.dest) return;
+      
+      io.to(data.dest).emit('user_typing', {
+        from: data.from,
+        isTyping: false,
+      });
+    });
+
+    /**
+     * Handle read receipts
+     */
+    socket.on('message_read', async (data) => {
+      if (!data?.messageId || !data?.readBy) return;
+
+      try {
+        await Message.findByIdAndUpdate(
+          data.messageId,
+          { 
+            read: true, 
+            readAt: new Date() 
+          }
+        );
+
+        // Notify sender that message was read
+        io.to(data.from).emit('message_read_receipt', {
+          messageId: data.messageId,
+          readBy: data.readBy,
+          readAt: new Date(),
+        });
+      } catch (error) {
+        console.error('Error updating read status:', error);
+      }
+    });
+
+    /**
+     * Handle disconnect
+     */
+    socket.on('disconnect', (reason) => {
+      if (process.env.devStatus === 'DEV') {
+        console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
+      }
+      
+      // Clean up if needed
+      num_clients = Math.max(0, num_clients - 1);
+    });
+
+    /**
+     * Handle errors
+     */
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
     });
   });
-  console.log("```````````````````````````````````````````````")
-}
+
+  /**
+   * Handle Socket.IO server errors
+   */
+  io.engine.on('connection_error', (err) => {
+    console.error('Socket.IO connection error:', {
+      code: err.code,
+      message: err.message,
+      context: err.context,
+    });
+  });
+
+  console.log('✓ Socket.IO initialized successfully');
+
+  /**
+   * Attach io instance to app for use in routes if needed
+   */
+  app.set('io', io);
+
+  /**
+   * Return io instance for external use
+   */
+  return io;
+};

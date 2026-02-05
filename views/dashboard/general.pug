@@ -1,89 +1,202 @@
 extends ../layout
+
 block append scripts
-	script(src="../js/MIT/jquery.select-bootstrap.js",type="application/javascript")
+  script(src="../js/MIT/jquery.select-bootstrap.js" type="application/javascript")
+
 block append content 
-	//- .main-panel
-		include ../partials/header
-	.wrapper.wrapper-full-page.full-page-background(ng-controller="dashboardCtrl",style="background-image: url('../imgs/register.jpeg')")
-		.full-page.login-page
-			.content
-				.container-fluid
-					.row
-						.col-md-3
-							.card.card-stats
-								.card-header.card-header-icon(data-background-color="orange")
-									i.material-icons school
-								.card-content
-									p.category Total schools registered
-									h3.card-title: a(href="/dashboard.school/") {{num_schools}} schools
-								.card-footer
-									.stats
-										i.material-icons local_offer </i> Tracked by eShuri Analytics
-						.col-md-3
-							.card.card-stats
-								.card-header.card-header-icon(data-background-color="green")
-									i.material-icons school
-								.card-content
-									p.category Total universities registered
-									h3.card-title: a(href="/dashboard.university/") {{num_univs}} universities<br/> {{num_faculties}} faculties
-								.card-footer
-									.stats
-										i.material-icons local_offer </i> Click to view details
-						.col-md-3
-							.card.card-stats
-								.card-header.card-header-icon(data-background-color="rose")
-									i.material-icons person
-								.card-content
-									a(href="/user.view")
-										p.category Total number of users registered
-										h3.card-title {{num_users}} users
-								.card-footer
-									.stats
-										i.material-icons local_offer </i> Click to view details
-						.col-md-3
-							.card.card-stats
-								.card-header.card-header-icon(data-background-color="green")
-									i.material-icons equalizer
-								.card-content
-									p.category Classes registered
-									h3.card-title {{num_classes}} classes
-									h3.card-title {{num_courses}} courses
-									h3.card-title {{num_units}} units
-								.card-footer
-									.stats
-										i.material-icons local_offer </i> Click to view details
-						.col-md-3
-							.card.card-stats
-								.card-header.card-header-icon(data-background-color="green")
-									i.material-icons backup
-								.card-content
-									a.btn-simple.btn.label.btn-rose(href="/backup.page") Manage backups
-									br
-									h3 {{errors_num}} errors
-									br
+  .wrapper.wrapper-full-page.full-page-background(
+    ng-controller="dashboardCtrl" 
+    style="background-image: url('../imgs/register.jpeg')"
+  )
+    .full-page.login-page
+      .content
+        .container-fluid
+          .row
+            //- Schools Card
+            //- Schools Card
+            .col-md-3
+              .card.card-stats
+                .card-header.card-header-icon(data-background-color="orange")
+                  i.material-icons school
+                .card-content
+                  p.category Total schools registered
+                  h3.card-title
+                    a(href="/dashboard/school" ng-if="num_schools > 0") {{ num_schools }} schools
+                    span(ng-if="num_schools === 0") No schools yet
+                .card-footer
+                  .stats
+                    i.material-icons settings
+                    |  Click to manage schools
+
+            //- Universities Card
+            .col-md-3
+              .card.card-stats
+                .card-header.card-header-icon(data-background-color="green")
+                  i.material-icons account_balance
+                .card-content
+                  p.category Total universities registered
+                  h3.card-title
+                    a(href="/dashboard/universities") 
+                      | {{ num_univs }} universities
+                      br
+                      | {{ num_faculties }} faculties
+                .card-footer
+                  .stats
+                    i.material-icons local_offer
+                    |  Click to view details
+
+            //- Users Card
+            .col-md-3
+              .card.card-stats
+                .card-header.card-header-icon(data-background-color="rose")
+                  i.material-icons person
+                .card-content
+                  a(href="/user/view")
+                    p.category Total number of users registered
+                    h3.card-title {{ num_users }} users
+                .card-footer
+                  .stats
+                    i.material-icons local_offer
+                    |  Click to view details
+
+            //- Statistics Card
+            .col-md-3
+              .card.card-stats
+                .card-header.card-header-icon(data-background-color="green")
+                  i.material-icons equalizer
+                .card-content
+                  p.category Resources registered
+                  h3.card-title 
+                    | {{ num_classes }} classes
+                    br
+                    | {{ num_courses }} courses
+                    br
+                    | {{ num_units }} units
+                .card-footer
+                  .stats
+                    i.material-icons local_offer
+                    |  Platform statistics
+
+          //- Second Row
+          .row(style="margin-top: 20px")
+            //- Accounts to Validate Card
+            .col-md-4(ng-if="num_to_validate > 0")
+              .card.card-stats
+                .card-header.card-header-icon(data-background-color="blue")
+                  i.material-icons verified_user
+                .card-content
+                  p.category Pending account validations
+                  h3.card-title
+                    a(href="/dashboard/accounts/validation") {{ num_to_validate }} accounts
+                .card-footer
+                  .stats
+                    i.material-icons info
+                    |  Click to validate accounts
+
+            //- Backup Management Card
+            .col-md-4
+              .card.card-stats
+                .card-header.card-header-icon(data-background-color="purple")
+                  i.material-icons backup
+                .card-content
+                  p.category System Management
+                  .text-center
+                    a.btn.btn-rose.btn-raised(href="/backup/page") 
+                      i.material-icons cloud_upload
+                      |  Manage Backups
+                .card-footer
+                  .stats
+                    i.material-icons settings
+                    |  System tools
+
+            //- Errors Card
+            .col-md-4(ng-if="errors_num > 0")
+              .card.card-stats
+                .card-header.card-header-icon(data-background-color="red")
+                  i.material-icons error
+                .card-content
+                  p.category System Errors
+                  h3.card-title
+                    a(href="/dashboard/errors" style="color: #f44336") {{ errors_num }} errors
+                .card-footer
+                  .stats
+                    i.material-icons warning
+                    |  Click to view error logs
+
+          //- Loading Indicator
+          .row(ng-if="loading")
+            .col-md-12.text-center
+              .progress
+                .progress-bar.progress-bar-striped.active(
+                  role="progressbar" 
+                  style="width: 100%"
+                ) Loading dashboard data...
+
 block append scripts
-	script(src="../js/MIT/MIT_sweetalert2.js", type="text/javascript")
-	script.
-		var app =angular.module('eshuri_App', ['ngRoute']);
-		app
-		.controller('dashboardCtrl', function($scope,$http){
-			$scope.loadDashboardInfo = function(){
-				$http
-				.post("/dashboard.statistics",{_csrf:$scope.anti_csrf})
-				.then(function(response){
-					$scope.num_users = response.data.users;
-					$scope.num_classes = response.data.classes;
-					$scope.num_courses = response.data.courses;
-					$scope.num_schools =response.data.schools;
-					$scope.num_univs =response.data.univs;
-					$scope.num_faculties = response.data.faculties;
-					$scope.num_units =response.data.units;
-					$scope.num_to_validate =response.data.toValidate;
-					$scope.errors_num =response.data.errors_num;
-				})
-				.catch(function(erreur){
-					Notifier.danger(erreur.data);
-				});
-			}
-			$scope.loadDashboardInfo()
-		})
+  script(src="../js/MIT/MIT_sweetalert2.js" type="text/javascript")
+  script.
+    var app = angular.module('eshuri_App', ['ngRoute']);
+    
+    app.controller('dashboardCtrl', function($scope, $http) {
+      // Initialize values
+      $scope.loading = true;
+      $scope.num_users = 0;
+      $scope.num_classes = 0;
+      $scope.num_courses = 0;
+      $scope.num_schools = 0;
+      $scope.num_univs = 0;
+      $scope.num_faculties = 0;
+      $scope.num_units = 0;
+      $scope.num_to_validate = 0;
+      $scope.errors_num = 0;
+
+      /**
+       * Load dashboard statistics
+       */
+      $scope.loadDashboardInfo = function() {
+        $scope.loading = true;
+        
+        $http.post("/dashboard/statistics", { 
+          _csrf: $scope.anti_csrf 
+        })
+        .then(function(response) {
+          console.log('Dashboard data loaded:', response.data);
+          
+          $scope.num_users = response.data.users || 0;
+          $scope.num_classes = response.data.classes || 0;
+          $scope.num_courses = response.data.courses || 0;
+          $scope.num_schools = response.data.schools || 0;
+          $scope.num_univs = response.data.univs || 0;
+          $scope.num_faculties = response.data.faculties || 0;
+          $scope.num_units = response.data.units || 0;
+          $scope.num_to_validate = response.data.toValidate || 0;
+          $scope.errors_num = response.data.errors_num || 0;
+          
+          $scope.loading = false;
+        })
+        .catch(function(error) {
+          console.error('Error loading dashboard:', error);
+          $scope.loading = false;
+          
+          // Show error notification
+          if (typeof Notifier !== 'undefined') {
+            Notifier.danger(error.data || 'Failed to load dashboard statistics');
+          } else {
+            alert('Error: ' + (error.data || 'Failed to load dashboard statistics'));
+          }
+        });
+      };
+
+      /**
+       * Refresh dashboard data
+       */
+      $scope.refreshDashboard = function() {
+        $scope.loadDashboardInfo();
+      };
+
+      // Load data on controller initialization
+      $scope.loadDashboardInfo();
+      
+      // Optional: Auto-refresh every 5 minutes
+      setInterval($scope.loadDashboardInfo, 5 * 60 * 1000);
+    });

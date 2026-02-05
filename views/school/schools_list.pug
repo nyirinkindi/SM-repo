@@ -1,0 +1,75 @@
+extends ../layout
+block append content 
+  .wrapper.wrapper-full-page(ng-controller="schoolsListCtrl")
+    .content
+      .container-fluid
+        .row
+          .col-md-12
+            .card
+              .card-header
+                h3.card-title 
+                  strong Schools Dashboard
+                  if is_super_admin
+                    span.btn-simple.btn.label.btn-info.ml-2
+                      i.icon.ion-ios-star
+                      |  Super Admin
+              .card-content
+                h2.text-center.text-info(ng-show="!schools") 
+                  strong Loading schools...
+                
+                .panel.panel-primary(ng-show="schools")
+                  .panel-header.text-center
+                    h3 All Schools ({{schools.length}})
+                  .panel-body
+                    .row
+                      .col-xs-12.col-sm-6.col-md-4.col-lg-3(ng-repeat="school in schools")
+                        .card.school-card(style="cursor: pointer;" ng-click="viewSchool(school)")
+                          .card-content
+                            h4
+                              strong {{school.name}}
+                            p.text-muted {{school.description | limitTo:100}}{{school.description.length > 100 ? '...' : ''}}
+                            p
+                              span.label.label-info {{school.district_name}}
+                            p
+                              strong Users: 
+                              span {{school.numUsers || 0}}
+
+block append scripts
+  script.
+    var app = angular.module('eshuri_App', ['ngRoute']);
+    
+    app.controller('schoolsListCtrl', function($scope, $http, $window){
+      console.log('🏫 Schools list controller initialized');
+      console.log('User access level:', '#{access_lvl}');
+      console.log('Is super admin:', #{is_super_admin});
+      
+      // Load all schools
+      $scope.loadSchools = function(){
+        console.log('📡 Loading schools list...');
+        $http.get('/school/list')
+          .then(function(response){
+            console.log('✅ Schools loaded:', response.data.length);
+            $scope.schools = response.data;
+          })
+          .catch(function(error){
+            console.error('❌ Error loading schools:', error);
+            if (typeof swal !== 'undefined') {
+              swal({
+                type: 'error',
+                title: 'Error',
+                html: 'Failed to load schools: ' + (error.data || error.statusText)
+              });
+            }
+          });
+      };
+      
+      // Navigate to school page
+      $scope.viewSchool = function(school){
+        console.log('🎯 Viewing school:', school.name, 'ID:', school._id);
+        $window.location.href = '/school/' + school._id;
+      };
+      
+      // Initialize
+      console.log('🚀 Initializing schools list...');
+      $scope.loadSchools();
+    });

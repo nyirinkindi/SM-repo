@@ -1,101 +1,103 @@
 const bcrypt = require('bcrypt-nodejs');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
-const saltRounds=10; //(rounds=10: ~10 hashes/sec) [https://goo.gl/aK7A0t]
-var Schema =mongoose.Schema;
-  /*  ACCESS_LEVELS possible
+const saltRounds = 10;
+const Schema = mongoose.Schema;
+
+/*  ACCESS_LEVELS possible
   1: SuperAdmin
-  1.1: SA_ADMIN
   2: Admin
   3: Teacher
   4: Student
   5: Parent
-  */
-var UserSchema = new Schema({
-  name:{type:String,required:true,maxlength:100,trim:true, uppercase:true,unique:false},
-  email:{type:String,required :true, match: /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:.[a-zA-Z0-9-]+)*$/ ,unique:false,lowercase:true,trim:true},
-  URN:{type:String,required:true,unique:false,lowercase:true,trim:true}, // will be like ABC-32412
-  password:{type:String,required:false,maxlength:100,unique:false},
-  gender:{type:Number,default:4, enum:[1,2],unique:false},
-  phone_number:{type:String,required:false,unique:false},
-  class_id:{type: Schema.Types.ObjectId,required:false,unique:false},
-  prev_classes:{type:Array,required:false,unique:false},
-
-  // prev_classes:{type:[Schema.Types.ObjectId],required:false,unique:false},
-  school_id:{type: Schema.Types.ObjectId,required:false,unique:false},
-
-  department_id:{type: Schema.Types.ObjectId,required:false,unique:false},
-  // faculty_id:{type: Schema.Types.ObjectId,required:false,unique:false},
-  // For application to admission
-  marital_status: {type:String,required:false,unique:false},
-
-    // Address Information    
-  address:{
-    province: {type:String,required:false,unique:false},
-    district: {type:String,required:false,unique:false},
-    sector: {type:String,required:false,unique:false},
-  },
-  // Guardian Information
-  guardian:{
-    name:{type:String,required:false,unique:false},
-    phone:{type:String,required:false,unique:false},
-    email:{type:String,required:false,unique:false},
-  },
-  // Programs Information
-  past_info:{
-    prev_school: {type:String,required:false,unique:false},
-    prev_combination: {type:String, require:false,unique:false},
-    grade: {type:Number,required:false, min:0,unique:false},
-  },
-  finance_category: {type:String,required:false,unique:false},
-  // Documents Information
-  documents: {
-    id_card:{type:String,required:false,unique:false},
-    transcipt:{type:String,required:false,unique:false}
-  },
-
-  access_level:{type:Number,default:4, enum:[1,2,3,4],unique:false},
-  // When you are not yet confirmed or someone has diasbled you
-  isEnabled:{type:Boolean,required:false, default:false, unique:false},
-  isValidated:{type:Boolean,required:false, default:false, unique:false},
-  course_retake:{type:[String], require:false,unique:false},
-  profile_pic:{type:String,required:false,unique:false},
-  hasPaid:{type:Boolean,required:false, default:true, unique:false},
-  lastSeen:{type:Date,required:false,unique:false},
-}, { timestamps: { createdAt: 'created_at' }});
-/**
- * Password hash middleware.
- */
-UserSchema.pre('save', function (next) {
-  const user = this
-  // user.email = user.email.trim().toLowerCase();//sanitize email
-  // user.URN = user.URN.trim().toLowerCase();
-  // only hash the password if it has been modified (or is new)
-  if (!user.isModified('password')) return next();
-  // Let's call a function that hash the password properly  
-  user.hash_password(user.password,user.email, (err,hashed_password)=>{
-    user.password = hashed_password;
-    next();
-  });
-});
-/**
- * Helper method for validating user's password.
- */
-UserSchema.methods.comparePassword = function (candidatePassword,email, cb) {
-  bcrypt.compare(candidatePassword+email.toLowerCase().trim(), this.password, (err, isMatch) => {
-    cb(err, isMatch);
-  });
-};
-/*
-    HASH THE PASSWORD
 */
-UserSchema.methods.hash_password = function (candidatePassword,email, cb) {
-  let salt =process.env.PASS_SALT;
-  bcrypt.genSalt(saltRounds, function(err, salt) {
-    bcrypt.hash(candidatePassword+(email.toLowerCase()), salt,null, function(err, hash) {
-        cb(err,hash);
-    });
+
+const UserSchema = new Schema({
+  name: { type: String, required: true, maxlength: 100, trim: true, uppercase: true },
+  email: { type: String, required: true, match: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/, lowercase: true, trim: true },
+  URN: { type: String, required: true, lowercase: true, trim: true },
+  password: { type: String, required: false, maxlength: 100 },
+  gender: { type: Number, default: 4, enum: [1, 2] },
+  phone_number: { type: String, required: false },
+  class_id: { type: Schema.Types.ObjectId, required: false },
+  prev_classes: { type: Array, required: false },
+  school_id: { type: Schema.Types.ObjectId, required: false },
+  department_id: { type: Schema.Types.ObjectId, required: false },
+  marital_status: { type: String, required: false },
+  address: {
+    province: { type: String, required: false },
+    district: { type: String, required: false },
+    sector: { type: String, required: false },
+  },
+  guardian: {
+    name: { type: String, required: false },
+    phone: { type: String, required: false },
+    email: { type: String, required: false },
+  },
+  past_info: {
+    prev_school: { type: String, required: false },
+    prev_combination: { type: String, required: false },
+    grade: { type: Number, required: false, min: 0 },
+  },
+  finance_category: { type: String, required: false },
+  documents: {
+    id_card: { type: String, required: false },
+    transcipt: { type: String, required: false }
+  },
+  access_level: { type: Number, default: 4, enum: [1, 2, 3, 4] },
+  isEnabled: { type: Boolean, required: false, default: false },
+  isValidated: { type: Boolean, required: false, default: false },
+  course_retake: { type: [String], required: false },
+  profile_pic: { type: String, required: false },
+  hasPaid: { type: Boolean, required: false, default: true },
+  lastSeen: { type: Date, required: false },
+}, { timestamps: { createdAt: 'created_at' } });
+
+/**
+ * Password hash middleware - MUST come before model compilation
+ */
+UserSchema.pre('save', function(next) {
+  // Only hash if password is modified
+  if (!this.isModified('password')) {
+    return next();
+  }
+  
+  try {
+    // Generate salt synchronously
+    const salt = bcrypt.genSaltSync(saltRounds);
+    // Hash password + email
+    const passwordWithEmail = this.password + this.email.toLowerCase();
+    const hash = bcrypt.hashSync(passwordWithEmail, salt);
+    this.password = hash;
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Compare password method
+ */
+UserSchema.methods.comparePassword = function(candidatePassword, email, cb) {
+  const passwordWithEmail = candidatePassword + email.toLowerCase().trim();
+  bcrypt.compare(passwordWithEmail, this.password, function(err, isMatch) {
+    if (err) return cb(err);
+    cb(null, isMatch);
   });
 };
+
+/**
+ * Hash password method (for compatibility)
+ */
+UserSchema.methods.hash_password = function(candidatePassword, email, cb) {
+  try {
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hash = bcrypt.hashSync(candidatePassword + email.toLowerCase(), salt);
+    cb(null, hash);
+  } catch (err) {
+    cb(err);
+  }
+};
+
 const User = mongoose.model('User', UserSchema);
 module.exports = User;

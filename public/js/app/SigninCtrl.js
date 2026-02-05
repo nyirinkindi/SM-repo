@@ -4,7 +4,7 @@ app.controller('SigninCtrl', function($scope, $http, $window){
 	$scope.signin = function(){
 		$scope.nvUser._csrf=$scope.anti_csrf;
 		$http
-		.post("/user.signin",$scope.nvUser)
+		.post("/auth/signin",$scope.nvUser)
 		.then(function(response){
 			$scope.nvUser =null;
 			$window.location.href=response.data;

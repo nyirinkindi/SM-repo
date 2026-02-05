@@ -131,7 +131,7 @@ block append scripts
       }
     })
     .filter('toAccess', function() {
-      return function(input){
+    cl  return function(input){
         if(isNaN(input)) return input;
         //- console.log(" we have "+input)
         switch(input){
@@ -194,8 +194,8 @@ block append scripts
           Notifier.danger(erreur.data);
         }); 
       }
-      $scope.view_school = function(id_school){
-        $window.location.href ="/school/"+id_school;
+      $scope.view_school = function(school_id){
+        $window.location.href ="/school/"+school_id;
       }
       $scope.deleteSchool = function(school_id,school_name){
         swal({

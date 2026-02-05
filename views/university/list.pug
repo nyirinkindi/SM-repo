@@ -1,0 +1,388 @@
+extends ../layout
+
+//- Add Material Dashboard CSS
+block css_code
+  link(rel="stylesheet", type="text/css", href="../css/monStyle.css?v=1.2.0")
+  link(rel="stylesheet", type="text/css", href="../css/css_css.css")
+  link(rel="stylesheet", type="text/css", href="../css/report_table.css")
+  link(rel="stylesheet", href="../css/bootstrap-material-design.min.css")
+  link(rel="stylesheet", href="../css/material-dashboard.css")
+  link(rel="stylesheet", href="../css/material-kit.css")
+
+block content
+  //- Include navbar
+  include ../partials/navbar
+  
+  .wrapper.wrapper-full-page(style="background: #f4f3ef; min-height: 100vh;")
+    .container-fluid(ng-controller="universitiesPageCtrl")
+      //- Header Section
+      .row(style="margin-top: 20px;")
+        .col-md-12
+          .card
+            .card-header.card-header-icon(data-background-color="blue")
+              i.material-icons account_balance
+            .card-content
+              h4.card-title List of Universities
+              p.category Browse all registered universities and their faculties
+              
+              //- Search and Add Button
+              .row(style="margin-top: 20px")
+                .col-md-9
+                  .form-group
+                    input.form-control(
+                      type="text" 
+                      ng-model="searchText" 
+                      placeholder="Search universities by name, code, or location..."
+                    )
+                .col-md-3.text-right
+                  button.btn.btn-primary.btn-raised(ng-click="openAddModal()" ng-if="isSuper Admin")
+                    i.material-icons add
+                    |  Add University
+
+      //- Loading Indicator
+      .row(ng-show="loading")
+        .col-md-12.text-center(style="padding: 50px")
+          .progress
+            .progress-bar.progress-bar-striped.active(
+              role="progressbar" 
+              style="width: 100%"
+            ) Loading universities...
+
+      //- Empty State
+      .row(ng-show="!loading && universities.length === 0")
+        .col-md-12.text-center(style="padding: 50px")
+          i.material-icons(style="font-size: 100px; color: #999") account_balance
+          h3 No university registered yet
+          p.text-muted Add your first university to get started
+          button.btn.btn-primary.btn-raised(ng-click="openAddModal()" ng-if="isSuperAdmin")
+            i.material-icons add
+            |  Add First University
+
+      //- Universities Grid
+      .row(ng-show="!loading && universities.length > 0")
+        .col-md-12
+          h4(style="margin: 20px 0") 
+            i.material-icons account_balance
+            |  Universities ({{ filteredUniversities.length }})
+      
+      .row(ng-show="!loading && universities.length > 0")
+        .col-md-4(
+          ng-repeat="uni in filteredUniversities = (universities | filter:searchText) track by uni._id"
+        )
+          .card.card-product
+            .card-image(data-header-animation="true")
+              a(ng-click="viewUniversity(uni._id)" style="cursor: pointer")
+                img.img(
+                  ng-src="{{ uni.cover_photo || '/imgs/hero-bg12.jpg' }}" 
+                  alt="{{ uni.name }}"
+                  onerror="this.src='/imgs/hero-bg12.jpg'"
+                  style="width: 100%; height: 200px; object-fit: cover;"
+                )
+              
+              //- University Code Badge
+              .card-badge(style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 4px;")
+                strong {{ uni.code }}
+            
+            .card-content(ng-click="viewUniversity(uni._id)" style="cursor: pointer")
+              .card-title
+                h4 {{ uni.name }}
+              
+              .card-description(ng-if="uni.description")
+                p.text-muted {{ uni.description | limitTo:100 }}{{ uni.description.length > 100 ? '...' : '' }}
+              
+              .row(style="margin-top: 15px")
+                .col-xs-6
+                  small
+                    i.material-icons(style="font-size: 16px; vertical-align: middle") location_on
+                    |  {{ uni.district_name || uni.location || 'N/A' }}
+                .col-xs-6.text-right
+                  small
+                    i.material-icons(style="font-size: 16px; vertical-align: middle") people
+                    |  {{ uni.numUsers || 0 }} users
+
+            .card-footer
+              .stats
+                span(style="margin-right: 15px;")
+                  i.material-icons(style="font-size: 16px; vertical-align: middle") business
+                  |  {{ uni.numFaculties || 0 }} Faculties
+                span(style="margin-right: 15px;")
+                  i.material-icons(style="font-size: 16px; vertical-align: middle") class
+                  |  {{ uni.numDepartments || 0 }} Departments
+                span
+                  i.material-icons(style="font-size: 16px; vertical-align: middle") school
+                  |  {{ uni.numStudents || 0 }} Students
+              
+              .stats.pull-right(ng-if="isSuperAdmin")
+                button.btn.btn-sm.btn-info.btn-simple(ng-click="editUniversity(uni); $event.stopPropagation();" title="Edit")
+                  i.material-icons edit
+                button.btn.btn-sm.btn-danger.btn-simple(ng-click="deleteUniversity(uni); $event.stopPropagation();" title="Delete")
+                  i.material-icons delete
+
+      //- Add/Edit University Modal
+      #universityModal.modal.fade(tabindex="-1")
+        .modal-dialog.modal-lg
+          .modal-content
+            .modal-header
+              button.close(type="button" data-dismiss="modal") ×
+              h4.modal-title
+                span(ng-if="!editMode") Add New University
+                span(ng-if="editMode") Edit University
+            
+            .modal-body
+              form(name="universityForm")
+                .row
+                  .col-md-6
+                    .form-group
+                      label University Name *
+                      input.form-control(
+                        type="text"
+                        ng-model="currentUniversity.name"
+                        placeholder="e.g., University of Rwanda"
+                        required
+                      )
+                  .col-md-3
+                    .form-group
+                      label Code *
+                      input.form-control(
+                        type="text"
+                        ng-model="currentUniversity.code"
+                        placeholder="e.g., UR"
+                        maxlength="20"
+                        style="text-transform: uppercase;"
+                        required
+                      )
+                  .col-md-3
+                    .form-group
+                      label Status
+                      select.form-control(ng-model="currentUniversity.isActive")
+                        option(value="true") Active
+                        option(value="false") Inactive
+                
+                .row
+                  .col-md-12
+                    .form-group
+                      label Description
+                      textarea.form-control(
+                        ng-model="currentUniversity.description"
+                        rows="3"
+                        placeholder="Brief description of the university"
+                      )
+                
+                .row
+                  .col-md-6
+                    .form-group
+                      label District
+                      input.form-control(
+                        type="text"
+                        ng-model="currentUniversity.district_name"
+                        placeholder="e.g., Kigali"
+                      )
+                  .col-md-6
+                    .form-group
+                      label Location/Address
+                      input.form-control(
+                        type="text"
+                        ng-model="currentUniversity.location"
+                        placeholder="Full address"
+                      )
+                
+                .row
+                  .col-md-6
+                    .form-group
+                      label Admin Email
+                      input.form-control(
+                        type="email"
+                        ng-model="currentUniversity.admin_mail"
+                        placeholder="admin@university.edu"
+                      )
+                  .col-md-6
+                    .form-group
+                      label Phone Number
+                      input.form-control(
+                        type="tel"
+                        ng-model="currentUniversity.phone_number"
+                        placeholder="+250..."
+                      )
+                
+                .row
+                  .col-md-6
+                    .form-group
+                      label Website
+                      input.form-control(
+                        type="url"
+                        ng-model="currentUniversity.website"
+                        placeholder="https://..."
+                      )
+                  .col-md-3
+                    .form-group
+                      label Academic Year Type *
+                      select.form-control(ng-model="currentUniversity.term_name" required)
+                        option(value="S") Semester
+                        option(value="T") Term
+                  .col-md-3
+                    .form-group
+                      label Quantity *
+                      select.form-control(ng-model="currentUniversity.term_quantity" required)
+                        option(value="1") 1
+                        option(value="2") 2
+                        option(value="3") 3
+                        option(value="4") 4
+                
+                .row
+                  .col-md-6
+                    .form-group
+                      label Cover Photo URL
+                      input.form-control(
+                        type="url"
+                        ng-model="currentUniversity.cover_photo"
+                        placeholder="https://..."
+                      )
+                  .col-md-6
+                    .form-group
+                      label Logo URL
+                      input.form-control(
+                        type="url"
+                        ng-model="currentUniversity.logo"
+                        placeholder="https://..."
+                      )
+            
+            .modal-footer
+              button.btn.btn-default(type="button" data-dismiss="modal") Cancel
+              button.btn.btn-primary(
+                type="button"
+                ng-click="saveUniversity()"
+                ng-disabled="universityForm.$invalid"
+              )
+                span(ng-if="!editMode") Create University
+                span(ng-if="editMode") Update University
+
+block append scripts
+  script.
+    (function() {
+      'use strict';
+      
+      console.log('🎓 Initializing Universities Page...');
+      
+      if (typeof angular === 'undefined') {
+        console.error('❌ AngularJS is not loaded!');
+        alert('AngularJS failed to load. Please refresh the page.');
+        return;
+      }
+      
+      var app;
+      try {
+        app = angular.module('eshuri_App');
+      } catch(e) {
+        app = angular.module('eshuri_App', []);
+      }
+      
+      app.controller('universitiesPageCtrl', ['$scope', '$http', '$window', function($scope, $http, $window) {
+        console.log('🎯 Universities controller initialized');
+        
+        // Initialize
+        $scope.universities = [];
+        $scope.loading = true;
+        $scope.searchText = '';
+        $scope.isSuperAdmin = #{access_lvl} === 1;
+        $scope.editMode = false;
+        $scope.currentUniversity = {};
+        
+        // Load universities
+        $scope.getUniversities = function() {
+          console.log('📡 Fetching universities from /university/api/list');
+          return $http.get("/university/api/list")
+            .then(function(response) {
+              console.log('✅ Universities loaded:', response.data.length);
+              $scope.universities = Array.isArray(response.data) ? response.data : [];
+            })
+            .catch(function(error) {
+              console.error('❌ Error loading universities:', error);
+              $scope.universities = [];
+            });
+        };
+        
+        // Reload data
+        $scope.reload = function() {
+          $scope.loading = true;
+          $scope.getUniversities().then(function() {
+            $scope.loading = false;
+            $scope.$apply();
+          });
+        };
+        
+        // View university details
+        $scope.viewUniversity = function(universityId) {
+          $window.location.href = "/university/" + universityId;
+        };
+        
+        // Open add modal
+        $scope.openAddModal = function() {
+          $scope.editMode = false;
+          $scope.currentUniversity = {
+            term_name: 'S',
+            term_quantity: 2,
+            isActive: true
+          };
+          $('#universityModal').modal('show');
+        };
+        
+        // Edit university
+        $scope.editUniversity = function(uni) {
+          $scope.editMode = true;
+          $scope.currentUniversity = angular.copy(uni);
+          $('#universityModal').modal('show');
+        };
+        
+        // Save university
+        $scope.saveUniversity = function() {
+          var url = $scope.editMode ? '/university/update' : '/university/add';
+          var data = angular.copy($scope.currentUniversity);
+          
+          if ($scope.editMode) {
+            data.university_id = data._id;
+          }
+          
+          data._csrf = "#{csrf_token}";
+          
+          $http.post(url, data)
+            .then(function(response) {
+              if (response.data.success) {
+                $('#universityModal').modal('hide');
+                $scope.reload();
+                alert($scope.editMode ? 'University updated!' : 'University created!');
+              } else {
+                alert('Error: ' + response.data.message);
+              }
+            })
+            .catch(function(error) {
+              alert('Error: ' + (error.data || 'Operation failed'));
+            });
+        };
+        
+        // Delete university
+        $scope.deleteUniversity = function(uni) {
+          if (!confirm('Are you sure you want to delete ' + uni.name + '?\\n\\nThis will fail if the university has faculties.')) {
+            return;
+          }
+          
+          $http.post('/university/delete', {
+            university_id: uni._id,
+            _csrf: "#{csrf_token}"
+          })
+          .then(function(response) {
+            if (response.data.success) {
+              $scope.reload();
+              alert('University deleted successfully!');
+            } else {
+              alert('Error: ' + response.data.message);
+            }
+          })
+          .catch(function(error) {
+            alert('Error: ' + (error.data || 'Cannot delete university'));
+          });
+        };
+        
+        // Load data on init
+        $scope.reload();
+      }]);
+    })();

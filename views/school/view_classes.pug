@@ -1,7 +1,5 @@
 extends ../layout
 block append content 
-  //- .main-panel
-    include ../partials/header
   .wrapper.wrapper-full-page.full-page-background(ng-controller="homePageSchoolCtrl",style="background-image: url('../imgs/register.jpeg')")
     .full-page.login-page
       .content
@@ -12,7 +10,15 @@ block append content
                 .card
                   .card-header
                     h3.card-title <strong>{{'#{school_name}'|uppercase}}</strong>
-                    if access ==3
+                    if is_super_admin
+                      span.btn-simple.btn.label.btn-info
+                        i.icon.ion-ios-star
+                        |  Super Admin View
+                    else if access_lvl <= 4
+                      span.btn-simple.btn.label.btn-success
+                        i.icon.ion-ios-checkmark
+                        |  School Administrator
+                    else if access_lvl == 3
                       span.btn-simple.btn.label.btn-rose Your courses are marked with 
                         i.icon.ion-ios-checkmark
                     br
@@ -36,7 +42,7 @@ block append scripts
   script(src="../js/MIT/MIT_sweetalert2.js", type="text/javascript")
   script(src="../js/MIT/jasny-bootstrap.min.js", type="text/javascript")
   script.
-    var app =angular.module('eshuri_App', ['ngRoute']);
+    var app = angular.module('eshuri_App', ['ngRoute']);
     app
     .filter('toTermName', function() {
       return function(input){ 
@@ -50,78 +56,126 @@ block append scripts
     })
     .filter('yearToDate', function() {
       return function(input, term){
-        input =Number(input)+2000;
+        input = Number(input)+2000;
         return term=='T'?input:input+'/'+Number(Number(input)+1)
       }
     })
-    .controller('homePageSchoolCtrl', function($scope, $http,$window){
-      // We receive years[], allCourses[],term_name,term_quantity     
+    .controller('homePageSchoolCtrl', function($scope, $http, $window){
+      console.log('🏫 School page controller initialized');
+      console.log('School ID:', '#{school_id}');
+      
+      // Load school content (classes and structure)
       $scope.load_SchoolContent = function(){
+        console.log('📡 Loading school content...');
         $http
-        .get("/school.content.list/"+$scope.school_id)
+        .get("/school/data/" + $scope.school_id)
         .then(function(response){
-          //- $scope.term_name =response.data.term_name;
-          $scope.term_quantity=response.data.term_quantity;
-          $scope.years =response.data.classes;
-          //console.log('We have Conteont '+JSON.stringify(response.data))
+          console.log('✅ School data loaded:', response.data);
+          $scope.term_quantity = response.data[1].infos.term_quantity;
+          $scope.years = response.data.classes || [];
         })
-        .catch(function(erreur){
-          Notifier.danger(erreur.data);
+        .catch(function(error){
+          console.error('❌ Error loading school content:', error);
+          if (typeof Notifier !== 'undefined') {
+            Notifier.danger(error.data || 'Failed to load school content');
+          }
         }); 
       }
+      
       $scope.getTerms_Limit = function() {
-          return Array.apply(null, {length: $scope.term_quantity}).map(Number.call, Number)
+        return Array.apply(null, {length: $scope.term_quantity}).map(Number.call, Number)
       }
+      
       $scope.getCurrentCourses = function(term){
-        $scope.currentTerm =term-1;
-        $scope.courses=[];
+        console.log('📚 Getting courses for term:', term);
+        $scope.currentTerm = term - 1;
+        $scope.courses = [];
         $http
-        .post("/school.content.courses/",
-        {"_csrf":$scope.anti_csrf,"class_id":$scope.currentYear,"currentTerm":term})
+        .post("/school/courses/list",
+        {"_csrf": $scope.anti_csrf, "class_id": $scope.currentYear, "currentTerm": term})
         .then(function(response){
-          $scope.courses =response.data;
-          //console.log("COURSE "+JSON.stringify($scope.courses))
-          //console.log(" or teacher_id"+$scope.teacher_id)
+          console.log('✅ Courses loaded:', response.data.length);
+          $scope.courses = response.data;
         })
-        .catch(function(erreur){
-          Notifier.danger(erreur.data);
+        .catch(function(error){
+          console.error('❌ Error loading courses:', error);
+          if (typeof Notifier !== 'undefined') {
+            Notifier.danger(error.data || 'Failed to load courses');
+          }
         }); 
       }
+      
       $scope.getTeacherID = function(){
+        console.log('👤 Getting user ID...');
         $http
-        .get("/user.get.id",{"_csrf":$scope.anti_csrf})
+        .get("/user/id")
         .then(function(response){
-          $scope.teacher_id =response.data;
+          console.log('✅ User ID:', response.data);
+          $scope.teacher_id = response.data;
         })
-        .catch(function(erreur){
-          Notifier.danger(erreur.data);
+        .catch(function(error){
+          console.error('❌ Error getting user ID:', error);
+          // Non-critical, don't show error to user
         }); 
       }
+      
       $scope.showCourse = function(cours){
-        //if($scope.teacher_id != cours.teacher_id)
-        //  Notifier.danger("This course is not yours")
-        //else
-         $window.location.href="/courses/"+cours._id
+        $window.location.href = "/courses/" + cours._id
       }
-      $scope.setCurrentYear= function(year){
-        $scope.courses =[];
-        $scope.currentTerm =-1;
-        $scope.currentYear= year;
+      
+      $scope.setCurrentYear = function(year){
+        $scope.courses = [];
+        $scope.currentTerm = -1;
+        $scope.currentYear = year;
       }
+      
       $scope.getUserClasses = function(){
-      	$http
-      	.get('/school.get.userClasses/'+$scope.school_id,{"_csrf":$scope.anti_csrf})
-      	.then(function(response){
-      		$scope.classes = response.data;
-      	})
-      	.catch(function(error){
-      		Notifier.danger(error.data)
-      	})
+        console.log('📋 Getting user classes...');
+        $http
+        .get('/school/classes/' + $scope.school_id)
+        .then(function(response){
+          console.log('✅ User classes loaded:', response.data);
+          $scope.classes = response.data;
+        })
+        .catch(function(error){
+          console.error('❌ Error loading classes:', error);
+          if (typeof Notifier !== 'undefined') {
+            Notifier.danger(error.data || 'Failed to load classes');
+          }
+        })
       }
-      $scope.currentTerm =-1;
-      $scope.anti_csrf ="#{csrf_token}";
-      $scope.school_id ="#{school_id}";
-      $scope.term_name="#{term_name}";
+      
+      // Initialize
+      $scope.currentTerm = -1;
+      $scope.anti_csrf = "#{csrf_token}";
+      $scope.school_id = "#{school_id}";
+      $scope.term_name = "#{term_name}";
+      
+      console.log('🚀 Initializing school page data...');
+      console.log('  - School ID:', $scope.school_id);
+      console.log('  - School ID type:', typeof $scope.school_id);
+      console.log('  - School ID length:', $scope.school_id ? $scope.school_id.length : 0);
+      console.log('  - Term name:', $scope.term_name);
+      console.log('  - CSRF token:', $scope.anti_csrf ? 'Present' : 'Missing');
+      
+      // Validate school_id before making requests
+      if (!$scope.school_id || $scope.school_id === 'undefined' || $scope.school_id === '[object Object]') {
+        console.error('❌ School ID is missing or invalid!');
+        console.error('❌ Raw value:', "#{school_id}");
+        alert('Error: School ID is missing or invalid. Please check the server logs.');
+        return;
+      }
+      
+      // Validate MongoDB ObjectId format (24 hex characters)
+      var mongoIdRegex = /^[a-f\d]{24}$/i;
+      if (!mongoIdRegex.test($scope.school_id)) {
+        console.error('❌ School ID is not a valid MongoDB ObjectId:', $scope.school_id);
+        alert('Error: Invalid school ID format.');
+        return;
+      }
+      
+      console.log('✅ School ID validated, making API calls...');
+      
       $scope.load_SchoolContent();
       $scope.getTeacherID();
       $scope.getUserClasses();

@@ -10,7 +10,7 @@ block append content
 							form(action="", method="", name="registrationForm")
 								// You can switch " data-color="purple" "  with one of the next bright colors: "green", "orange", "red", "blue"
 								.wizard-header
-									a.btn.btn-simple.btn-success.pull-left(href="/user.signin") Go back
+									a.btn.btn-simple.btn-success.pull-left(href="/auth/signin") Go back
 									h3.wizard-title Build Your Profile
 									h5 This information will let us know more about you.
 								.wizard-navigation
@@ -201,7 +201,7 @@ block append scripts
 							buttonsStyling: false
 						})
 						$scope.nvUser =null;
-						setTimeout(function(){$window.location.href="/user.signin"},5000)
+						setTimeout(function(){$window.location.href="/auth/signin"},5000)
 					})
 					.catch(function(erreur){
 						Notifier.danger(erreur.data);

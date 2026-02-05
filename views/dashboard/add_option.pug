@@ -85,7 +85,7 @@ block append content
 											tbody
 												tr(ng-repeat="school in schools |orderBy:a:b")
 													td(width="1%" height="1%") {{$index + 1}}
-													td: a(href="/dashboard.classe/{{school._id}}") {{school.name|uppercase}}
+													td: a(href="/dashboard/classe/{{school._id}}") {{school.name|uppercase}}
 													td {{school.admin_mail || 'Not defined'}}
 													td {{school.genderness|to_Gender}}
 													td {{school.category|to_Category}}
