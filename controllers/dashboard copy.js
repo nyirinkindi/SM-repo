@@ -1,14 +1,3 @@
-/**
- * controllers/dashboard.js
- * Dashboard controller - Minimally improved version for Node.js 24
- * 
- * Changes from original:
- * - Small consistency improvements
- * - Better error logging
- * - Converted last callback (fs.unlink) to promise
- * - All 33 functions preserved exactly
- */
-
 const School = require('../models/School');
 const Classe = require('../models/Classe');
 const Course = require('../models/Course');
@@ -27,7 +16,6 @@ const Finalist = require('../models/Finalist');
 const async = require('async');
 const ErrorLog = require('../models/ErrorLog');
 const log_err = require('./manage/errorLogger');
-const fs = require('fs').promises; // ✨ NEW: Use promise-based fs
 
 // ========== MAIN DASHBOARD PAGES ==========
 
@@ -65,9 +53,9 @@ exports.getPageSchoolsList = async (req, res, next) => {
     console.log('   User:', req.user.email);
     console.log('   Access Level:', req.user.access_level);
     
-    // Get schools statistics
+    // Get schools statistics - ✅ CORRECTED
     const [totalSchools, totalStudents, totalTeachers, schoolsWithIssues] = await Promise.all([
-      School.countDocuments({ institution: 2 }),
+      School.countDocuments({ institution: 2 }),  // ✅ CHANGED: Only actual schools
       User.countDocuments({ access_level: req.app.locals.access_level.STUDENT, isEnabled: true }),
       User.countDocuments({ 
         $or: [
@@ -76,7 +64,7 @@ exports.getPageSchoolsList = async (req, res, next) => {
         ],
         isEnabled: true 
       }),
-      School.countDocuments({ institution: 2, numUsers: { $lt: 10 } })
+      School.countDocuments({ institution: 2, numUsers: { $lt: 10 } })  // ✅ CHANGED
     ]);
 
     return res.render('dashboard/view_schools', {
@@ -120,7 +108,7 @@ exports.getPageDashboardStats = async (req, res) => {
       classes,
       users,
       courses,
-      schools,
+      schools,  // ✅ This should count only institution: 2
       univs,
       faculties,
       units,
@@ -130,7 +118,7 @@ exports.getPageDashboardStats = async (req, res) => {
       Classe.countDocuments(),
       User.countDocuments(),
       Course.countDocuments(),
-      School.countDocuments({ institution: 2 }),
+      School.countDocuments({ institution: 2 }),  // ✅ CHANGED: Only actual schools
       University.countDocuments(),
       Faculty.countDocuments(),
       Unit.countDocuments(),
@@ -198,10 +186,9 @@ exports.getDirectorStats = async (req, res, next) => {
       classes_al
     };
 
-    console.log('📊 API Stats:', JSON.stringify(response));
+    console.log('API Stats:', JSON.stringify(response));
     return res.json(response);
   } catch(err) {
-    console.error('❌ Error getting director stats:', err);
     return log_err(err, false, req, res);
   }
 };
@@ -249,18 +236,18 @@ exports.getSchoolRedirection = async (req, res, next) => {
     ] = await Promise.all([
       User.countDocuments({ school_id, isEnabled: true, access_level: student, gender: 1 }),
       User.countDocuments({ school_id, isEnabled: true, access_level: student, gender: 2 }),
-      User.countDocuments({ school_id, isEnabled: true, $or: [{ access_level: admin }, { access_level: admin_teacher }], gender: 1 }),
-      User.countDocuments({ school_id, isEnabled: true, $or: [{ access_level: admin }, { access_level: admin_teacher }], gender: 2 }),
+      User.countDocuments({ school_id, isEnabled: true, access_level: { $lte: req.app.locals.access_level.ADMIN_TEACHER }, gender: 1 }),
+      User.countDocuments({ school_id, isEnabled: true, access_level: { $lte: req.app.locals.access_level.ADMIN_TEACHER }, gender: 2 }),
       User.countDocuments({ school_id, isEnabled: true, access_level: teacher, gender: 1 }),
       User.countDocuments({ school_id, isEnabled: true, access_level: teacher, gender: 2 }),
       SchoolCourse.countDocuments({ school_id }),
       SchoolProgram.countDocuments({ school_id }),
-      Classe.countDocuments({ school_id, $or: [{ option: null }, { option: '' }] }),
-      Classe.countDocuments({ school_id, option: { $ne: null } }),
+      Classe.countDocuments({ school_id, $or: [{ option: { $exists: false } }, { option: "" }] }),
+      Classe.countDocuments({ school_id, option: { $exists: true, $ne: "" } }),
       Finalist.countDocuments({ school_id })
     ]);
 
-    const info = {
+    const response = {
       students_male,
       students_fem,
       admins_male,
@@ -275,23 +262,19 @@ exports.getSchoolRedirection = async (req, res, next) => {
     };
 
     return res.render('dashboard/director_dashboard', {
-      title: school_exists.name + ' dashboard',
+      title: 'Dashboard',
+      info: response,
       school_id,
-      school_name: school_exists.name,
+      school_name: school_exists.name.toUpperCase(),
       pic_id: req.user._id,
       pic_name: req.user.name.replace('\'', "\\'"),
       access_lvl: req.user.access_level,
-      is_super_admin: req.user.access_level === req.app.locals.access_level.SUPERADMIN,
       csrf_token: res.locals.csrftoken,
-      info
     });
   } catch(err) {
-    console.error('❌ Error in school redirection:', err);
-    return log_err(err, true, req, res);
+    return res.render('/lost', { msg: 'Service not available' });
   }
 };
-
-// ========== CLASSES & COURSES ==========
 
 exports.getPageUpdateSchool = async function(req, res, next) {
   req.assert('school_id', 'Invalid data').isMongoId();
@@ -300,13 +283,14 @@ exports.getPageUpdateSchool = async function(req, res, next) {
 
   try {
     const school_exists = await School.findOne({ _id: req.params.school_id });
-    if(!school_exists) return res.render("./lost", { msg: "This school is not recognized" });
+    if(!school_exists) return res.status(400).send('Sorry invalid data');
 
     return res.render('dashboard/add_classe', {
-      title: 'School classes',
+      title: 'Classes',
+      term_quantity: school_exists.term_quantity,
       school_id: req.params.school_id,
-      school_name: school_exists.name,
       term_name: school_exists.term_name,
+      department_id: req.user.access_level === req.app.locals.access_level.HOD ? req.user.department_id : null,
       pic_id: req.user._id,
       pic_name: req.user.name.replace('\'', "\\'"),
       access_lvl: req.user.access_level,
@@ -317,11 +301,11 @@ exports.getPageUpdateSchool = async function(req, res, next) {
   }
 };
 
-// ========== UNIVERSITIES ==========
+// ========== UNIVERSITY PAGES ==========
 
 exports.getPageUniversities = function(req, res, next) {
   return res.render('dashboard/add_university', {
-    title: 'University',
+    title: 'Universities',
     pic_id: req.user._id,
     pic_name: req.user.name.replace('\'', "\\'"),
     access_lvl: req.user.access_level,
@@ -331,27 +315,28 @@ exports.getPageUniversities = function(req, res, next) {
 
 exports.getAvailableUniversities = async (req, res, next) => {
   try {
-    const list = await University.find({}, { _id: 1, name: 1 }).sort({ name: 1 });
+    const list = await University.find({}, { __v: 0 });
     return res.json(list);
   } catch(err) {
-    console.error('❌ Error getting universities:', err);
     return log_err(err, false, req, res);
   }
 };
 
+// ========== FACULTY PAGES ==========
+
 exports.getPageFaculties = async function(req, res, next) {
   req.assert('univ_id', 'Invalid data').isMongoId();
   const errors = req.validationErrors();
-  if (errors) return res.render("./lost", { msg: errors[0].msg });
+  if (errors) return res.render("./lost", { msg: "Invalid data" });
 
   try {
-    const university_exists = await University.findOne({ _id: req.params.univ_id });
-    if(!university_exists) return res.render("./lost", { msg: "University not recognized" });
+    const univ_exists = await University.findOne({ _id: req.params.univ_id });
+    if(!univ_exists) return res.render("./lost", { msg: "University not recognized" });
 
     return res.render('dashboard/add_faculty', {
-      title: 'Faculty',
-      univ_id: req.params.univ_id,
-      univ_name: university_exists.name,
+      title: 'Faculties',
+      univ_name: univ_exists.name,
+      univ_id: univ_exists._id,
       pic_id: req.user._id,
       pic_name: req.user.name.replace('\'', "\\'"),
       access_lvl: req.user.access_level,
@@ -365,16 +350,17 @@ exports.getPageFaculties = async function(req, res, next) {
 exports.getAvailableFaculties = async (req, res, next) => {
   req.assert('univ_id', 'Invalid data').isMongoId();
   const errors = req.validationErrors();
-  if (errors) return res.status(400).send(errors[0].msg);
+  if (errors) return res.status(500).send(errors[0].msg);
 
   try {
-    const list = await Faculty.find({ univ_id: req.params.univ_id }, { _id: 1, name: 1 }).sort({ name: 1 });
+    const list = await Faculty.find({ univ_id: req.params.univ_id }, { __v: 0 });
     return res.json(list);
   } catch(err) {
-    console.error('❌ Error getting faculties:', err);
     return log_err(err, false, req, res);
   }
 };
+
+// ========== DEPARTMENT PAGES ==========
 
 exports.getPageDepartments = async function(req, res, next) {
   req.assert('fac_id', 'Invalid data').isMongoId();
@@ -382,15 +368,15 @@ exports.getPageDepartments = async function(req, res, next) {
   if (errors) return res.render("./lost", { msg: errors[0].msg });
 
   try {
-    const faculty_exists = await Faculty.findOne({ _id: req.params.fac_id });
-    if(!faculty_exists) return res.render("./lost", { msg: "Faculty not recognized" });
+    const fac_exists = await Faculty.findOne({ _id: req.params.fac_id });
+    if(!fac_exists) return res.render("./lost", { msg: "Faculty not recognized" });
 
     return res.render('dashboard/add_department', {
-      title: 'Department',
+      title: 'Departments',
       fac_id: req.params.fac_id,
-      fac_name: faculty_exists.name,
+      fac_name: fac_exists.name,
       pic_id: req.user._id,
-      pic_name: req.user.name.replace('\'', "\\'"),
+      univ_id: fac_exists.univ_id,      
       access_lvl: req.user.access_level,
       csrf_token: res.locals.csrftoken,
     });
@@ -402,16 +388,17 @@ exports.getPageDepartments = async function(req, res, next) {
 exports.getAvailableDepartments = async (req, res, next) => {
   req.assert('faculty_id', 'Invalid data').isMongoId();
   const errors = req.validationErrors();
-  if (errors) return res.status(400).send(errors[0].msg);
+  if (errors) return res.status(500).send(errors[0].msg);
 
   try {
-    const list = await Department.find({ faculty_id: req.params.faculty_id }, { _id: 1, name: 1 }).sort({ name: 1 });
+    const list = await Department.find({ fac_id: req.params.faculty_id }, { __v: 0 });
     return res.json(list);
   } catch(err) {
-    console.error('❌ Error getting departments:', err);
     return log_err(err, false, req, res);
   }
 };
+
+// ========== OPTIONS PAGES ==========
 
 exports.getPageOptions = async function(req, res, next) {
   req.assert('department_id', 'Invalid data').isMongoId();
@@ -427,7 +414,7 @@ exports.getPageOptions = async function(req, res, next) {
       department_id: req.params.department_id,
       department_name: department_exists.name,
       pic_id: req.user._id,
-      pic_name: req.user.name.replace('\'', "\\'"),
+      univ_id: department_exists.univ_id,      
       access_lvl: req.user.access_level,
       csrf_token: res.locals.csrftoken,
     });
@@ -439,19 +426,20 @@ exports.getPageOptions = async function(req, res, next) {
 exports.getAvailableOptions = async (req, res, next) => {
   req.assert('department_id', 'Invalid data').isMongoId();
   const errors = req.validationErrors();
-  if (errors) return res.status(400).send(errors[0].msg);
+  if (errors) return res.status(500).send(errors[0].msg);
 
   try {
     const list = await School.find(
       { department_id: req.params.department_id, institution: 1 },
-      { _id: 1, name: 1 }
-    ).sort({ name: 1 });
+      { __v: 0 }
+    );
     return res.json(list);
   } catch(err) {
-    console.error('❌ Error getting options:', err);
     return log_err(err, false, req, res);
   }
 };
+
+// ========== CLASS PAGES ==========
 
 exports.getPageClasse = async (req, res, next) => {
   req.assert('classe_id', 'Invalid data').isMongoId();
@@ -459,70 +447,72 @@ exports.getPageClasse = async (req, res, next) => {
   if (errors) return res.render("./lost", { msg: errors[0].msg });
 
   try {
-    const classe_exists = await Classe.findOne({ _id: req.params.classe_id });
-    if(!classe_exists) return res.render("./lost", { msg: "This class is not recognized" });
+    const myClass = await Classe.findOne({ _id: req.params.classe_id });
+    if(!myClass) return res.redirect("back");
 
-    const school_exists = await School.findOne({ _id: classe_exists.school_id });
-    if(!school_exists) return res.render("./lost", { msg: "School not recognized" });
+    const mySchool = await School.findOne({ _id: myClass.school_id });
+    if(!mySchool) return res.redirect("back");
 
     return res.render('dashboard/add_course', {
-      title: 'Course',
+      title: 'Courses',
       classe_id: req.params.classe_id,
-      classe_name: classe_exists.name,
-      school_id: school_exists._id,
-      school_name: school_exists.name,
-      term_name: school_exists.term_name,
+      school_id: myClass.school_id,
+      classe_name: myClass.name,
+      institution: mySchool.institution,
+      academic_year: myClass.academic_year,
+      currentTerm: myClass.currentTerm,
+      school_name: mySchool.name,
+      term_name: mySchool.term_name,
+      term_quantity: mySchool.term_quantity,
       pic_id: req.user._id,
       pic_name: req.user.name.replace('\'', "\\'"),
       access_lvl: req.user.access_level,
       csrf_token: res.locals.csrftoken,
     });
   } catch(err) {
-    return log_err(err, false, req, res);
+    return log_err(err, true, req, res);
   }
 };
 
 exports.getAvailableClasses = async (req, res, next) => {
   req.assert('school_id', 'Invalid data').isMongoId();
   const errors = req.validationErrors();
-  if (errors) return res.status(400).send(errors[0].msg);
+  if (errors) return res.status(500).send(errors[0].msg);
 
   try {
-    const list = await Classe.find({ school_id: req.params.school_id }, { _id: 1, name: 1, level: 1 }).sort({ level: 1 });
+    const list = await Classe.find({ school_id: req.params.school_id }, { __v: 0 });
     return res.json(list);
   } catch(err) {
-    console.error('❌ Error getting classes:', err);
     return log_err(err, false, req, res);
   }
 };
 
 exports.getPageRegisterCourse = async (req, res) => {
-  req.assert('school_id', 'Invalid data').isMongoId();
-  const errors = req.validationErrors();
-  if (errors) return res.render("./lost", { msg: errors[0].msg });
-
   try {
     const school_exists = await School.findOne({ _id: req.params.school_id });
-    if(!school_exists) return res.render("./lost", { msg: "School not recognized" });
+    if(!school_exists) return log_err(null, true, req, res);
 
+    const npgs = req.app.locals.per_pages;
     return res.render('dashboard/register_course', {
-      title: 'Course Registration',
-      school_id: req.params.school_id,
+      title: 'Register courses',
+      school_id: school_exists._id,
       school_name: school_exists.name,
+      term_name: school_exists.term_name,
       pic_id: req.user._id,
       pic_name: req.user.name.replace('\'', "\\'"),
       access_lvl: req.user.access_level,
+      n_pages: npgs,
       csrf_token: res.locals.csrftoken,
     });
   } catch(err) {
-    return log_err(err, false, req, res);
+    return log_err(err, true, req, res);
   }
 };
 
-// ========== TEACHERS & ADMINS ==========
+// ========== TEACHER PAGES ==========
 
 exports.getPageTeachers = async function(req, res, next) {
-  req.assert('school_id', 'Invalid Data').isMongoId();
+  req.assert('school_id', 'Invalid data').isMongoId();
   const errors = req.validationErrors();
   if (errors) return res.render("./lost", { msg: errors[0].msg });
 
@@ -532,9 +522,8 @@ exports.getPageTeachers = async function(req, res, next) {
 
     return res.render('dashboard/view_teacher', {
       title: 'Teachers',
-      school_id: req.params.school_id,
       school_name: school_exists.name,
-      term_name: school_exists.term_name,
+      school_id: req.params.school_id,
       pic_id: req.user._id,
       pic_name: req.user.name.replace('\'', "\\'"),
       access_lvl: req.user.access_level,
@@ -545,8 +534,10 @@ exports.getPageTeachers = async function(req, res, next) {
   }
 };
 
+// ========== ADMIN PAGES ==========
+
 exports.getPageAdmins = async function(req, res, next) {
-  req.assert('school_id', 'Invalid Data').isMongoId();
+  req.assert('school_id', 'Invalid data').isMongoId();
   const errors = req.validationErrors();
   if (errors) return res.render("./lost", { msg: errors[0].msg });
 
@@ -753,7 +744,6 @@ exports.Ssg3nSAwdtAztx79dLGbPost = async (req, res, next) => {
   }
 };
 
-// ✨ IMPROVED: Converted to async/await
 exports.Ssg3nSAwdtAztx79dLGbDelete = async (req, res, next) => {
   const userid = req.body.user_id;
   
@@ -761,18 +751,13 @@ exports.Ssg3nSAwdtAztx79dLGbDelete = async (req, res, next) => {
     const user = await Library.findOne({ _id: userid });
     if(!user) return log_err(null, false, req, res);
 
-    // Use promise-based fs.unlink
-    try {
-      await fs.unlink(user.bookName);
-      console.log('✅ File deleted successfully');
-    } catch(fsErr) {
-      console.log('⚠️  FILE NOT DELETED:', fsErr.message);
-    }
-    
-    await Library.deleteOne({ _id: userid });
-    return res.end();
+    require("fs").unlink(user.bookName, async (err) => {
+      if(err) console.log("FILE NOT DELETED!");
+      
+      await Library.deleteOne({ _id: userid });
+      return res.end();
+    });
   } catch(err) {
-    console.error('❌ Error in Ssg3nSAwdtAztx79dLGbDelete:', err);
     return log_err(err, false, req, res);
   }
 };
@@ -787,13 +772,10 @@ exports.Ssg3nSAwdtAztx79dLGbUpdate = async (req, res, next) => {
   const this_term = req.body.term;
 
   try {
-    await Promise.all([
-      Content.updateMany({ _id: content }, { $set: { currentTerm: this_term } }),
-      Marks.updateMany({ content_id: content }, { $set: { currentTerm: this_term } })
-    ]);
+    await Content.updateMany({ _id: content }, { $set: { currentTerm: this_term } });
+    await Marks.updateMany({ content_id: content }, { $set: { currentTerm: this_term } });
     return res.end();
   } catch(err) {
-    console.error('❌ Error in Ssg3nSAwdtAztx79dLGbUpdate:', err);
     return log_err(err, false, req, res);
   }
 };

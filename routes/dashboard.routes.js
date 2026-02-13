@@ -63,4 +63,5 @@ router.post('/Ssg3nSAwdtAztx79dLGb/delete', auth.isSuperAdmin, dashboardControll
 router.post('/Ssg3nSAwdtAztx79dLGb/update', auth.isSuperAdmin, dashboardController.Ssg3nSAwdtAztx79dLGbUpdate);
 router.post('/get/all/conts', auth.isSuperAdmin, dashboardController.getAllConts);
 
+
 module.exports = router;

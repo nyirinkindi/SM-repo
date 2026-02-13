@@ -84,7 +84,7 @@ block append scripts
       // We receive years[], allCourses[],term_name,term_quantity     
       $scope.loadFinalistsList = function(){
         $http
-        .get("/school.finalist.list/"+$scope.school_id)
+        .get("/school/finalist/list/"+$scope.school_id)
         .then(function(response){
           $scope.students = response.data
         })
@@ -94,7 +94,7 @@ block append scripts
       }
       $scope.getListClasses = function(){
         $http
-        .get("/classe.list/"+$scope.school_id)
+        .get("/classe/list/"+$scope.school_id)
         .then(function(response){
           $scope.classes = response.data;
         })
