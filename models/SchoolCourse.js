@@ -1,36 +1,27 @@
-var mongoose =require('mongoose');
-var Schema =mongoose.Schema;
-/*
-A course is given by only one teacher and that teacher is set by the Admin of the School
-*/
-// Le schema de Course
-var SchoolCourse =new Schema({
-	name:{type:String,required:true,maxlength:300,unique:false,lowercase:true,trim:true},
-	school_id:{type: Schema.Types.ObjectId,required:true,unique:false},
-  //code:{type:String,required:true,unique:false,lowercase:true,trim:true},  will be like BIO-32412
-        /* Useful for the report */
-}, { timestamps: {createdAt:'time'}});
+'use strict';
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-SchoolCourse.pre('save', function (next) {
-	next();
-});
 /**
- * This function is called when adding a new course, check if code name or name is already registered
- * in the same classe.. 
+ * SchoolCourse Schema
+ * A master list of courses offered by a school (not yet assigned to a class).
  */
-SchoolCourse.statics.checkCourseExists = function (course, cb) {
-  this.findOne({
-  		$and:[
-  			{$or:[{'name': course.name.trim().toLowerCase()}]},
-  			{'school_id':course.school_id}
-  		]
-  	},
-  	(err,school_course_exists)=>{
-    	cb(err,school_course_exists);
-  })
-  //cb(err, isMatch);
+const SchoolCourseSchema = new Schema({
+  name:      { type: String,                required: true, maxlength: 300, lowercase: true, trim: true },
+  school_id: { type: Schema.Types.ObjectId, required: true },
+}, { timestamps: { createdAt: 'time' } });
+
+/**
+ * Check whether a course with the same name already exists in this school.
+ * Returns a Promise — use with async/await or .then()/.catch()
+ */
+SchoolCourseSchema.statics.checkCourseExists = function (course) {
+  return this.findOne({
+    $and: [
+      { name:      course.name.trim().toLowerCase() },
+      { school_id: course.school_id },
+    ],
+  });
 };
 
-const SchoolCourseDB = mongoose.model('SchoolCourses', SchoolCourse);
-
-module.exports = SchoolCourseDB;
+module.exports = mongoose.model('SchoolCourses', SchoolCourseSchema);

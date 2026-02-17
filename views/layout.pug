@@ -16,21 +16,21 @@ html(lang="en" ng-app="eshuri_App")
     
     // Base CSS - Always loaded
     link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
-    link(rel="stylesheet", type="text/css", href="../css/ionicons.min.css")
+    link(rel="stylesheet", type="text/css", href="/css/ionicons.min.css")
     link(rel="stylesheet", type="text/css", href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons")
     link(rel="stylesheet", type="text/css", href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css")
     
     // Conditional CSS - Loaded based on page needs
     block css_code
       //- Default CSS for most pages
-      link(rel="stylesheet", type="text/css", href="../css/monStyle.css?v=1.2.0")
-      link(rel="stylesheet", type="text/css", href="../js/summernote/font-awesome.min.css")
-      link(rel="stylesheet", type="text/css", href="../js/summernote/summernote.css")
-      link(rel="stylesheet", type="text/css", href="../js/select/select.css")
-      link(rel="stylesheet", type="text/css", href="../mycss/select2-3.4.5.css")
-      link(rel="stylesheet", type="text/css", href="../mycss/selectize.default-0.8.5.css")
-      link(rel="stylesheet", type="text/css", href="../css/css_css.css")
-      link(rel="stylesheet", type="text/css", href="../css/report_table.css")
+      link(rel="stylesheet", type="text/css", href="/css/monStyle.css?v=1.2.0")
+      link(rel="stylesheet", type="text/css", href="/js/summernote/font-awesome.min.css")
+      link(rel="stylesheet", type="text/css", href="/js/summernote/summernote.css")
+      link(rel="stylesheet", type="text/css", href="/js/select/select.css")
+      link(rel="stylesheet", type="text/css", href="/mycss/select2-3.4.5.css")
+      link(rel="stylesheet", type="text/css", href="/mycss/selectize.default-0.8.5.css")
+      link(rel="stylesheet", type="text/css", href="/css/css_css.css")
+      link(rel="stylesheet", type="text/css", href="/css/report_table.css")
     
     // Additional page-specific styles
     block styles
@@ -52,24 +52,24 @@ html(lang="en" ng-app="eshuri_App")
     script.
       // Fallback check for Angular
       if (typeof angular === 'undefined') {
-        console.error('❌ AngularJS failed to load from CDN');
+        console.error('âŒ AngularJS failed to load from CDN');
       } else {
-        console.log('✅ AngularJS loaded successfully from CDN');
+        console.log('âœ… AngularJS loaded successfully from CDN');
       }
     
     // Common utilities (only if files exist locally)
-    script(src='../js/homejs/ngStorage.js', type='text/javascript', onerror="console.warn('ngStorage.js not found')")
-    script(src="../js/dirpagination.js", type="application/javascript", onerror="console.warn('dirpagination.js not found')")
+    script(src='/js/homejs/ngStorage.js', type='text/javascript', onerror="console.warn('ngStorage.js not found')")
+    script(src="/js/dirpagination.js", type="application/javascript", onerror="console.warn('dirpagination.js not found')")
     
     // Conditional JS - Loaded based on page needs
     block scripts
       //- Default scripts for most pages
-      script(src="../js/MIT/jquery.tagsinput.js", type="text/javascript")
-      script(src="../js/MIT/bootstrap-notify.js", type="application/javascript")
-      script(src="../js/summernote/summernote.js", type="text/javascript")
-      script(src="../js/summernote/angular-summernote.min.js", type="text/javascript")
-      script(src="../js/typeahead.bundle.min.js", type="text/javascript")
-      script(src="../js/bootstrap-tokenfield.min.js", type="text/javascript")
-      script(src="../js/MIT/MIT_Dashboard.js", type="text/javascript")
-      script(src="../js/MIT/MIT_Dashboard2.js", type="text/javascript")
-      script(src="../js/my_scripts.js", type="text/javascript")
+      script(src="/js/MIT/jquery.tagsinput.js", type="text/javascript")
+      script(src="/js/MIT/bootstrap-notify.js", type="application/javascript")
+      script(src="/js/summernote/summernote.js", type="text/javascript")
+      script(src="/js/summernote/angular-summernote.min.js", type="text/javascript")
+      script(src="/js/typeahead.bundle.min.js", type="text/javascript")
+      script(src="/js/bootstrap-tokenfield.min.js", type="text/javascript")
+      script(src="/js/MIT/MIT_Dashboard.js", type="text/javascript")
+      script(src="/js/MIT/MIT_Dashboard2.js", type="text/javascript")
+      script(src="/js/my_scripts.js", type="text/javascript")

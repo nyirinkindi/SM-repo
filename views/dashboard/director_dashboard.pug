@@ -26,10 +26,10 @@ block append content
                         |  Super Admin View
                   .col-md-4.text-right
                     //- Quick navigation buttons
-                    a.btn.btn-white.btn-raised(href="/school/#{school_id}" style="margin: 5px;")
+                    a.btn.btn-white.btn-raised(href!=`/school/${school_id}` style="margin: 5px;")
                       i.material-icons visibility
                       |  View School
-                    a.btn.btn-white.btn-raised(href="/school/settings/#{school_id}" style="margin: 5px;")
+                    a.btn.btn-white.btn-raised(href!=`/school/settings/${school_id}` style="margin: 5px;")
                       i.material-icons settings
                       |  Settings
 
@@ -37,7 +37,7 @@ block append content
         .row
           //- Classes Card - ORANGE
           .col-lg-3.col-md-6.col-sm-6(style="margin-bottom: 20px;")
-            a(href="/dashboard/classe/#{school_id}" style="text-decoration: none;")
+            a(href!=`/dashboard/classe/${school_id}` style="text-decoration: none;")
               .card.card-stats(style="border-radius: 10px; box-shadow: 0 3px 15px rgba(255,152,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'")
                 .card-header.card-header-icon(data-background-color="orange" style="background: linear-gradient(60deg, #ffa726, #fb8c00) !important;")
                   i.material-icons class
@@ -52,7 +52,7 @@ block append content
 
           //- Students Card - BLUE
           .col-lg-3.col-md-6.col-sm-6(style="margin-bottom: 20px;")
-            a(href="/school/students/#{school_id}" style="text-decoration: none;")
+            a(href!=`/school/students/${school_id}` style="text-decoration: none;")
               .card.card-stats(style="border-radius: 10px; box-shadow: 0 3px 15px rgba(33,150,243,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'")
                 .card-header.card-header-icon(data-background-color="blue" style="background: linear-gradient(60deg, #26c6da, #00acc1) !important;")
                   i.material-icons people
@@ -67,7 +67,7 @@ block append content
 
           //- Teachers Card - PURPLE
           .col-lg-3.col-md-6.col-sm-6(style="margin-bottom: 20px;")
-            a(href="/dashboard/teachers/#{school_id}" style="text-decoration: none;")
+            a(href!=`/dashboard/teachers/${school_id}` style="text-decoration: none;")
               .card.card-stats(style="border-radius: 10px; box-shadow: 0 3px 15px rgba(156,39,176,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'")
                 .card-header.card-header-icon(data-background-color="purple" style="background: linear-gradient(60deg, #ab47bc, #8e24aa) !important;")
                   i.material-icons person
@@ -82,7 +82,7 @@ block append content
 
           //- Courses & Programs Card - GREEN
           .col-lg-3.col-md-6.col-sm-6(style="margin-bottom: 20px;")
-            a(href="/dashboard/register/course/#{school_id}" style="text-decoration: none;")
+            a(href!=`/dashboard/register/course/${school_id}` style="text-decoration: none;")
               .card.card-stats(style="border-radius: 10px; box-shadow: 0 3px 15px rgba(76,175,80,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'")
                 .card-header.card-header-icon(data-background-color="green" style="background: linear-gradient(60deg, #66bb6a, #43a047) !important;")
                   i.material-icons book
@@ -119,7 +119,7 @@ block append content
                 p.category(style="color: #999; font-size: 13px;") Alumni / Finalists
                 h3.card-title(style="color: #3c4858; font-weight: 600;") #{info.finalists}
                 small(style="color: #666;")
-                  a(href="/school/finalists/#{school_id}" style="color: #00897b;")
+                  a(href!=`/school/finalists/${school_id}` style="color: #00897b;")
                     i.material-icons(style="font-size: 14px; vertical-align: middle;") visibility
                     |  View finalists
 
@@ -147,19 +147,19 @@ block append content
               .card-content(style="padding: 25px;")
                 .row
                   .col-md-3.col-sm-6.text-center(style="margin-bottom: 15px;")
-                    a.btn.btn-info.btn-lg.btn-block(href="/school/#{school_id}" style="padding: 20px; border-radius: 8px;")
+                    a.btn.btn-info.btn-lg.btn-block(href!=`/school/${school_id}` style="padding: 20px; border-radius: 8px;")
                       i.material-icons(style="font-size: 36px; display: block; margin-bottom: 10px;") visibility
                       | View Classes
                   .col-md-3.col-sm-6.text-center(style="margin-bottom: 15px;")
-                    a.btn.btn-success.btn-lg.btn-block(href="/dashboard/classe/#{school_id}" style="padding: 20px; border-radius: 8px;")
+                    a.btn.btn-success.btn-lg.btn-block(href!=`/dashboard/classe/${school_id}` style="padding: 20px; border-radius: 8px;")
                       i.material-icons(style="font-size: 36px; display: block; margin-bottom: 10px;") add_circle
                       | Manage Classes
                   .col-md-3.col-sm-6.text-center(style="margin-bottom: 15px;")
-                    a.btn.btn-rose.btn-lg.btn-block(href="/school/settings/#{school_id}" style="padding: 20px; border-radius: 8px;")
+                    a.btn.btn-rose.btn-lg.btn-block(href!=`/school/settings/${school_id}` style="padding: 20px; border-radius: 8px;")
                       i.material-icons(style="font-size: 36px; display: block; margin-bottom: 10px;") settings
                       | School Settings
                   .col-md-3.col-sm-6.text-center(style="margin-bottom: 15px;")
-                    a.btn.btn-warning.btn-lg.btn-block(href="/dashboard/register/course/#{school_id}" style="padding: 20px; border-radius: 8px;")
+                    a.btn.btn-warning.btn-lg.btn-block(href!=`/dashboard/register/course/${school_id}` style="padding: 20px; border-radius: 8px;")
                       i.material-icons(style="font-size: 36px; display: block; margin-bottom: 10px;") library_add
                       | Add Courses
 

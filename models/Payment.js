@@ -1,18 +1,21 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+'use strict';
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-var PaymentSchema = new Schema({
-    student_URN:{type:String,required:true,maxlength:100,lowercase:true,trim:true},
-    school_name:{type: String,required:true,unique:false},
-    amount:{type:Number, required:true, unique:false},
-    status:{type:Number, required:true, default:0, unique:false},// either 0: pending, -1: unsuccessful, 1: successful
-    email:{type:String,required :false, match: /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:.[a-zA-Z0-9-]+)*$/ ,unique:false,lowercase:true,trim:true},
-    phone_number:{type:String,required:false,unique:false},
-});
+/**
+ * Payment Schema
+ * Records payment transactions for school programs.
+ *
+ * status: -1 = Unsuccessful | 0 = Pending | 1 = Successful
+ */
+const PaymentSchema = new Schema({
+  student_URN:  { type: String, required: true,  maxlength: 100, lowercase: true, trim: true },
+  school_name:  { type: String, required: true },
+  amount:       { type: Number, required: true },
+  status:       { type: Number, required: true,  default: 0, enum: [-1, 0, 1] },
+  email:        { type: String, required: false, lowercase: true, trim: true,
+                  match: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/ },
+  phone_number: { type: String, required: false },
+}, { timestamps: { createdAt: 'created_at' } });
 
-PaymentSchema.pre('save', function(next) {
-   next();
-});
-
-const PaymentDB = mongoose.model('Payments', PaymentSchema);
-module.exports = PaymentDB;
+module.exports = mongoose.model('Payments', PaymentSchema);

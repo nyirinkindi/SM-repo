@@ -2,7 +2,7 @@ extends ../layout
 block append content 
 	//- .main-panel
 		include ../partials/header 
-	.wrapper.wrapper-full-page.full-page-background(ng-controller="confirmAccountCtrl",style="background-image: url('../imgs/register.jpeg')")
+	.wrapper.wrapper-full-page.full-page-background(ng-controller="confirmAccountCtrl",style="background-image: url('/imgs/register.jpeg')")
 		.full-page.login-page
 			.content
 				.container-fluid
@@ -87,7 +87,7 @@ block append content
 																			td: a.btn-simple.btn.label.btn-rose(ng-click="activateStudent(student._id,student.class_id)") confirm
 																				i.material-icons verified_user
 block append scripts
-	script(src="../js/MIT/MIT_sweetalert2.js", type="text/javascript")
+	script(src="/js/MIT/MIT_sweetalert2.js", type="text/javascript")
 	script.
 		var app =angular.module('eshuri_App', ['ngRoute', 'angularUtils.directives.dirPagination']);
 		app

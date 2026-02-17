@@ -1,25 +1,20 @@
-var mongoose =require('mongoose');
-var Schema =mongoose.Schema;
-/*
-Notification area made by all persons in a school
-*/
-// Le schma de Notification
-var NotificationSchema =new Schema({
-	user_id:{type:Schema.Types.ObjectId,required:true,unique:false},
-	user_name:{type:String,required:true,unique:false,index:false},
-	content:{type:String,required:true,unique:false,index:false,trim:true},
-	class_id:{type: Schema.Types.ObjectId,required:false,unique:false},
-	school_id:{type: Schema.Types.ObjectId,required:true,unique:false},
-	dest_id:{type: Schema.Types.ObjectId,required:false,unique:false},
-	level:{type:Number,required:false,default:0},
-	isAuto:{type:Boolean,required:true},
-	
-}, { timestamps: {createdAt:'time'}});
+'use strict';
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-NotificationSchema.pre('save', function (next) {
-	next();
-});
+/**
+ * Notification Schema
+ * Announcements and alerts within a school.
+ */
+const NotificationSchema = new Schema({
+  user_id:   { type: Schema.Types.ObjectId, required: true },
+  user_name: { type: String,                required: true, trim: true },
+  content:   { type: String,                required: true, trim: true },
+  class_id:  { type: Schema.Types.ObjectId, required: false },
+  school_id: { type: Schema.Types.ObjectId, required: true },
+  dest_id:   { type: Schema.Types.ObjectId, required: false },
+  level:     { type: Number,                required: false, default: 0 },
+  isAuto:    { type: Boolean,               required: true },
+}, { timestamps: { createdAt: 'time' } });
 
-const NotificationDB = mongoose.model('Notification', NotificationSchema);
-
-module.exports = NotificationDB;
+module.exports = mongoose.model('Notification', NotificationSchema);

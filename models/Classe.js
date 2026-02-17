@@ -1,24 +1,20 @@
-var mongoose =require('mongoose');
-var Schema =mongoose.Schema;
-/*
-Une classe est par exemple S2MCE pour le High school ou 3 rd Year in Universitites
-*/
-// Le schma de Classe
-var ClasseSchema = new Schema({
-	name:{type:String,required:true,maxlength:300,unique:false,lowercase:true,trim:true},
-	level:{type:Number,required:true,min:1,unique:false},// NIveau d  la classe
-	option:{type:String,required:false,unique:false,lowercase:true,trim:true},
-	sub_level:{type:String,required:false,unique:false,lowercase:true,trim:true},
-	currentTerm:{type:Number,required:true,unique:false},
-	academic_year:{type:Number,required:false,unique:false},	
-	class_teacher:{type:Schema.Types.ObjectId,required:false,unique:false},
-	school_id:{type:Schema.Types.ObjectId,required:true,unique:false},
+'use strict';
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+/**
+ * Classe Schema
+ * Represents a school class, e.g. "S2MCE" (High School) or "3rd Year" (University)
+ */
+const ClasseSchema = new Schema({
+  name:          { type: String, required: true,  maxlength: 300, lowercase: true, trim: true },
+  level:         { type: Number, required: true,  min: 1 },
+  option:        { type: String, required: false, lowercase: true, trim: true },
+  sub_level:     { type: String, required: false, lowercase: true, trim: true },
+  currentTerm:   { type: Number, required: true },
+  academic_year: { type: Number, required: false },
+  class_teacher: { type: Schema.Types.ObjectId, required: false },
+  school_id:     { type: Schema.Types.ObjectId, required: true },
 });
 
-ClasseSchema.pre('save', function (next) {
-	next();
-});
-
-const ClasseDB = mongoose.model('Classes', ClasseSchema);
-
-module.exports = ClasseDB;
+module.exports = mongoose.model('Classes', ClasseSchema);

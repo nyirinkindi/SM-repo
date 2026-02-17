@@ -1,35 +1,28 @@
-var mongoose =require('mongoose');
-var Schema =mongoose.Schema;
-/*
-A program is given by only one teacher and that teacher is set by the Admin of the School
-*/
-// Le schema de Course
-var SchoolProgram =new Schema({
-  abbreviation:{type:String,required:false,maxlength:300,unique:false,lowercase:true,trim:true}, //like MEG
-	name:{type:String,required:true,maxlength:300,unique:false,lowercase:true,trim:true}, //like Mathematics Economics, Geography
-	school_id:{type: Schema.Types.ObjectId,required:true,unique:false},
-}, { timestamps: {createdAt:'time'}});
+'use strict';
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-SchoolProgram.pre('save', function (next) {
-	next();
-});
 /**
- * This function is called when adding a new program, check if code name or name is already registered
- * in the same classe.. 
+ * SchoolProgram Schema
+ * Academic programs offered by a school (e.g. MEG = Mathematics, Economics, Geography).
  */
-SchoolProgram.statics.checkProgramExists = function (program, cb) {
-  this.findOne({
-  		$and:[
-  			{$or:[{'name': program.name.trim().toLowerCase()},{'abbreviation':program.abbreviation}]},
-  			{'school_id':program.school_id}
-  		]
-  	},
-  	(err,school_program_exists)=>{
-    	cb(err,school_program_exists);
-  })
-  //cb(err, isMatch);
+const SchoolProgramSchema = new Schema({
+  abbreviation: { type: String, required: false, maxlength: 300, lowercase: true, trim: true },
+  name:         { type: String, required: true,  maxlength: 300, lowercase: true, trim: true },
+  school_id:    { type: Schema.Types.ObjectId,   required: true },
+}, { timestamps: { createdAt: 'time' } });
+
+/**
+ * Check whether a program with the same name OR abbreviation already exists in this school.
+ * Returns a Promise — use with async/await or .then()/.catch()
+ */
+SchoolProgramSchema.statics.checkProgramExists = function (program) {
+  return this.findOne({
+    $and: [
+      { $or: [{ name: program.name.trim().toLowerCase() }, { abbreviation: program.abbreviation }] },
+      { school_id: program.school_id },
+    ],
+  });
 };
 
-const SchoolProgramDB = mongoose.model('SchoolPrograms', SchoolProgram);
-
-module.exports = SchoolProgramDB;
+module.exports = mongoose.model('SchoolPrograms', SchoolProgramSchema);

@@ -14,7 +14,6 @@ const Classe = require('../models/Classe');
 const Finalist = require('../models/Finalist');
 const Message = require('../models/Message');
 const log_err = require('./manage/errorLogger');
-const async = require('async');
 
 // ========== HELPER FUNCTIONS ==========
 
@@ -37,38 +36,38 @@ exports.getPageSchool = function(req, res, next) {
  * Replace the existing function in controllers/school.js
  */
 exports.homepageSchool = async function(req, res, next) {
-  console.log('🏫 homepageSchool called with params:', req.params);
-  console.log('🔍 school_id:', req.params.school_id);
+  console.log('ðŸ« homepageSchool called with params:', req.params);
+  console.log('ðŸ” school_id:', req.params.school_id);
   
   // Validate school ID
   req.assert('school_id', 'Invalid Data').isMongoId();
   const errors = req.validationErrors();
   
   if (errors) {
-    console.error('❌ Validation errors:', errors);
+    console.error('âŒ Validation errors:', errors);
     return res.render("./lost", { msg: errors[0].msg });
   }
 
   try {
-    console.log('🔎 Looking for school with ID:', req.params.school_id);
+    console.log('ðŸ”Ž Looking for school with ID:', req.params.school_id);
     
     const school = await School.findOne({ _id: req.params.school_id });
     
     if (!school) {
-      console.error('❌ School not found:', req.params.school_id);
+      console.error('âŒ School not found:', req.params.school_id);
       return res.render("./lost", { msg: "School not found" });
     }
     
-    console.log('✅ School found:', school.name);
-    console.log('👤 User school_id:', req.user.school_id);
-    console.log('👤 User access_level:', req.user.access_level);
-    console.log('🏫 School _id:', school._id);
+    console.log('âœ… School found:', school.name);
+    console.log('ðŸ‘¤ User school_id:', req.user.school_id);
+    console.log('ðŸ‘¤ User access_level:', req.user.access_level);
+    console.log('ðŸ« School _id:', school._id);
     
     // Check if user belongs to this school (only for non-super admins)
     const ACCESS_LEVELS = req.app.locals.access_level;
     if (req.user.access_level > ACCESS_LEVELS.ADMIN_TEACHER) {
       if (String(school._id) !== String(req.user.school_id)) {
-        console.error('❌ User does not belong to this school');
+        console.error('âŒ User does not belong to this school');
         return res.render("./lost", { msg: "This is not your school" });
       }
     }
@@ -78,26 +77,26 @@ exports.homepageSchool = async function(req, res, next) {
     let effectiveAccessLevel = req.user.access_level;
     if (req.user.access_level === ACCESS_LEVELS.SUPERADMIN) {
       effectiveAccessLevel = ACCESS_LEVELS.ADMIN_TEACHER;
-      console.log('🔓 Super admin viewing school - granting admin-teacher privileges');
+      console.log('ðŸ”“ Super admin viewing school - granting admin-teacher privileges');
     }
 
-    console.log('✅ Rendering school page for:', school.name);
+    console.log('âœ… Rendering school page for:', school.name);
     
     return res.render('school/view_classes', {
       title: school.name,
-      school_id: String(school._id),  // ✅ CHANGED: Convert ObjectId to string
+      school_id: String(school._id),  // âœ… CHANGED: Convert ObjectId to string
       school_name: school.name,
       term_name: school.term_name,
-      pic_id: String(req.user._id),   // ✅ CHANGED: Convert ObjectId to string
+      pic_id: String(req.user._id),   // âœ… CHANGED: Convert ObjectId to string
       pic_name: req.user.name.replace('\'', "\\'"),
       access_lvl: effectiveAccessLevel,
       actual_access_lvl: req.user.access_level,
       is_super_admin: req.user.access_level === ACCESS_LEVELS.SUPERADMIN,
-      student_class: req.user.class_id ? String(req.user.class_id) : '',  // ✅ CHANGED: Convert to string with null check
+      student_class: req.user.class_id ? String(req.user.class_id) : '',  // âœ… CHANGED: Convert to string with null check
       csrf_token: res.locals.csrftoken,
     });
   } catch (err) {
-    console.error('❌ Error in homepageSchool:', err);
+    console.error('âŒ Error in homepageSchool:', err);
     return log_err(err, true, req, res);
   }
 };
@@ -141,13 +140,13 @@ exports.getSchoolProfile = async (req, res, next) => {
     let img_path = schoolExists && schoolExists.cover_photo ? schoolExists.cover_photo : "schoo_default.png";
     let file_location = picture_location + "/" + img_path;
     
-    const fs = require("fs");
-    fs.access(file_location, fs.constants.F_OK | fs.constants.R_OK, (err) => {
-      if (err) {
-        file_location = picture_location + "/schoo_default.png";
-      }
-      return res.sendFile(file_location);
-    });
+    const fs = require("fs").promises;
+    try {
+      await fs.access(file_location, require("fs").constants.F_OK | require("fs").constants.R_OK);
+    } catch {
+      file_location = picture_location + "/schoo_default.png";
+    }
+    return res.sendFile(file_location);
   } catch (err) {
     console.log("Error picture " + err);
     return res.sendFile(picture_location + "/schoo_default.png");
@@ -252,10 +251,9 @@ exports.changeSchoolProfile = (req, res, next) => {
       
       if ((oldPic !== schoolExists.cover_photo) && oldPic) {
         const fileToDelete = process.env.SCHOOL_PIC_PATH + "/" + oldPic;
-        require("fs").unlink(fileToDelete, (err) => {
-          if (err) console.log("===>>DELETION ERROR " + err);
-          console.log("===>>Success AKIMANA ");
-        });
+        require("fs").promises.unlink(fileToDelete)
+          .then(() => console.log("===>>Success AKIMANA "))
+          .catch((err) => console.log("===>>DELETION ERROR " + err));
       }
       return res.redirect("back");
     } catch (err) {
@@ -413,25 +411,25 @@ exports.removeSchool = async function(req, res, next) {
 // ========== SCHOOL LISTS ==========
 exports.getSchool_JSON = async (req, res) => {
   try {
-    console.log('📚 Fetching schools list...');
+    console.log('ðŸ“š Fetching schools list...');
     console.log('   User:', req.user.email);
     console.log('   Access Level:', req.user.access_level);
     
-    // ✅ CORRECTED: Fetch only actual schools (institution = 2)
+    // âœ… CORRECTED: Fetch only actual schools (institution = 2)
     // institution: 1 = Departments/Options
     // institution: 2 = Actual Schools
     const schools = await School.find({
-      institution: 2  // ✅ Only actual schools
+      institution: 2  // âœ… Only actual schools
     })
       .select('name cover_photo description district_name term_quantity term_name retake_marks category genderness partnership institution admin_mail numUsers')
       .sort({ name: 1 })
       .lean();
 
-    console.log(`✅ Returning ${schools.length} schools`);
+    console.log(`âœ… Returning ${schools.length} schools`);
     
     // Log sample for debugging
     if (schools.length > 0) {
-      console.log('📋 Sample school:', {
+      console.log('ðŸ“‹ Sample school:', {
         name: schools[0].name,
         id: schools[0]._id,
         institution: schools[0].institution
@@ -440,7 +438,7 @@ exports.getSchool_JSON = async (req, res) => {
     
     res.json(schools);
   } catch (error) {
-    console.error('❌ Error fetching schools:', error);
+    console.error('âŒ Error fetching schools:', error);
     res.status(500).json([]);
   }
 };
@@ -456,7 +454,7 @@ exports.getSchool_BySearch = async (req, res, next) => {
 };
 exports.getSchool_DashboardJSON = async (req, res) => {
   try {
-    console.log('📋 Rendering schools list dashboard');
+    console.log('ðŸ“‹ Rendering schools list dashboard');
     console.log('   User:', req.user.email);
     console.log('   Access Level:', req.user.access_level);
     
@@ -474,7 +472,7 @@ exports.getSchool_DashboardJSON = async (req, res) => {
       csrf_token: res.locals.csrftoken
     });
   } catch (error) {
-    console.error('❌ Error rendering schools page:', error);
+    console.error('âŒ Error rendering schools page:', error);
     res.status(500).render('error', {
       message: 'Error loading schools page',
       user: req.user
@@ -483,21 +481,21 @@ exports.getSchool_DashboardJSON = async (req, res) => {
 };
 exports.getDepartments_JSON = async (req, res) => {
   try {
-    console.log('🏛️ Fetching departments list...');
+    console.log('ðŸ›ï¸ Fetching departments list...');
     
-    // ✅ CORRECTED: Fetch only departments/options (institution = 1)
+    // âœ… CORRECTED: Fetch only departments/options (institution = 1)
     const departments = await School.find({
-      institution: 1  // ✅ Only departments/options
+      institution: 1  // âœ… Only departments/options
     })
       .select('name cover_photo description district_name term_quantity category institution numUsers partnership department_id')
       .sort({ name: 1 })
       .lean();
 
-    console.log(`✅ Returning ${departments.length} departments`);
+    console.log(`âœ… Returning ${departments.length} departments`);
     
     res.json(departments);
   } catch (error) {
-    console.error('❌ Error fetching departments:', error);
+    console.error('âŒ Error fetching departments:', error);
     res.status(500).json([]);
   }
 };
@@ -800,15 +798,13 @@ exports.editStudent = async (req, res, next) => {
     if (userDetails.email === req.user.email) return res.status(400).send("Change your password using platform setting");
     if (userDetails.access_level <= req.user.access_level) return res.status(400).send("User password has not reset");
 
-    new Notification({
+    await new Notification({
       user_id: req.body.student_id,
       user_name: userDetails.name,
       content: "Your password has reset to " + req.app.locals.defaultPwd + ". Please change it as long as you access the platform",
       school_id: userDetails.school_id,
       isAuto: false,
-    }).save((err) => {
-      if (err) console.log(" You have to log " + err);
-    });
+    }).save().catch((err) => console.log(" You have to log " + err));
 
     userDetails.name = req.body.name;
     userDetails.email = userDetails.email;
@@ -853,9 +849,7 @@ exports.removeStudent = async function(req, res, next) {
     await studentExists.deleteOne();
 
     if (hasProfilPic) {
-      require('fs').unlink(profile_pic, (err) => {
-        // File deleted or error logged
-      });
+      require('fs').promises.unlink(profile_pic).catch(() => {});
     }
     
     return res.end();
@@ -1126,37 +1120,37 @@ exports.getUserClasses = async (req, res, next) => {
   
   const errors = req.validationErrors();
   if (errors) {
-    console.error('❌ Validation errors in getUserClasses:', errors);
+    console.error('âŒ Validation errors in getUserClasses:', errors);
     return res.status(400).json({ error: errors[0].msg });
   }
 
   const userId = req.query.u ? req.query.u : req.user._id;
   
-  console.log('📋 getUserClasses called:');
+  console.log('ðŸ“‹ getUserClasses called:');
   console.log('  - School ID:', req.params.school_id);
   console.log('  - User ID:', userId);
   console.log('  - User Access Level:', req.user.access_level);
   
   try {
-    // ✅ Convert callback to Promise-based approach
+    // âœ… Convert callback to Promise-based approach
     const classes = await new Promise((resolve, reject) => {
       Util.listClasses(req, userId, (err, classes) => {
         if (err) {
-          console.error('❌ Error from listClasses:', err);
+          console.error('âŒ Error from listClasses:', err);
           reject(err);
         } else {
-          console.log('✅ Classes returned:', classes ? classes.length : 0);
+          console.log('âœ… Classes returned:', classes ? classes.length : 0);
           resolve(classes);
         }
       });
     });
     
-    // ✅ ALWAYS return JSON, never HTML
+    // âœ… ALWAYS return JSON, never HTML
     return res.json(classes || []);
     
   } catch (err) {
-    console.error('❌ Error in getUserClasses:', err);
-    // ✅ Return JSON error, not HTML
+    console.error('âŒ Error in getUserClasses:', err);
+    // âœ… Return JSON error, not HTML
     return res.status(400).json({ error: err.toString() });
   }
 };

@@ -1,13 +1,13 @@
+'use strict';
 const mongoose = require('mongoose');
 
+/**
+ * Token Schema
+ * Stores email-verification / password-reset tokens.
+ * Value format: "<email>+<token>"
+ */
 const tokenSchema = new mongoose.Schema({
-  value: { type: String, required:true, unique: false },// email+token
-}, { timestamps: { createdAt: 'created_at' }});
+  value: { type: String, required: true },
+}, { timestamps: { createdAt: 'created_at' } });
 
-tokenSchema.pre('save', function (next) {
-  const token = this
-  next();
-});
-
-const token = mongoose.model('Token', tokenSchema);
-module.exports = token;
+module.exports = mongoose.model('Token', tokenSchema);

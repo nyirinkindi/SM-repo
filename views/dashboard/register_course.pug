@@ -1,10 +1,10 @@
 extends ../layout
 block append scripts
-  script(src="../js/MIT/jquery.select-bootstrap.js",type="application/javascript")
+  script(src="/js/MIT/jquery.select-bootstrap.js",type="application/javascript")
 block append content
   //- .main-panel
     include ../partials/header 
-  .wrapper.wrapper-full-page.full-page-background(ng-controller="course_registerCtrl",style="background-image: url('../imgs/register.jpeg')")
+  .wrapper.wrapper-full-page.full-page-background(ng-controller="course_registerCtrl",style="background-image: url('/imgs/register.jpeg')")
     .full-page.login-page
       .content
         .container
@@ -102,7 +102,7 @@ block append content
                         dir-pagination-controls.pull-right(pagination-id='allprograms', max-size='5', direction-links='true', boundary-links='true')
                       p.category.text-center(ng-show ="!programs.length") No program provided here
 block append scripts
-  script(src="../js/MIT/MIT_sweetalert2.js", type="text/javascript")
+  script(src="/js/MIT/MIT_sweetalert2.js", type="text/javascript")
   script.
     var app =angular.module('eshuri_App', ['ngRoute', 'angularUtils.directives.dirPagination']);
     app

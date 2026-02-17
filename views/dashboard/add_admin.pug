@@ -2,7 +2,7 @@ extends ../layout
 block append content 
 	//- .main-panel
 		include ../partials/header 
-	.wrapper.wrapper-full-page.full-page-background(ng-controller="adminCtrl",style="background-image: url('../imgs/register.jpeg')")
+	.wrapper.wrapper-full-page.full-page-background(ng-controller="adminCtrl",style="background-image: url('/imgs/register.jpeg')")
 		.full-page.login-page
 			.content
 				.container-fluid
@@ -60,7 +60,7 @@ block append content
 											dir-pagination-controls.pull-right(pagination-id='alladmins', max-size='5', direction-links='true', boundary-links='true')
 										p.category.text-center(ng-show ="!admins.length") No admins provided here
 block append scripts
-	script(src="../js/MIT/MIT_sweetalert2.js", type="text/javascript")
+	script(src="/js/MIT/MIT_sweetalert2.js", type="text/javascript")
 	script.
 		var app =angular.module('eshuri_App', ['ngRoute', 'angularUtils.directives.dirPagination']);
 		app

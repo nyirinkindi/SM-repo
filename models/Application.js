@@ -1,33 +1,31 @@
-var validator = require('validator');
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+'use strict';
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-// Schema to process registration applications
-var applicationSchema = new mongoose.Schema({
-	school_id: {type: Schema.Types.ObjectId,required:false,unique:false},
-	user_id: {type: Schema.Types.ObjectId,required:true,unique:false},
-	comment: {type:String,required:false,unique:false},
-	year_o_s:{type:Number,required:false,unique:false},
-	program: {type:String,required:false,unique:false},
-	faculty: {type:String,required:true,unique:false},
-	status: {type:String,required:true, enum:['A','P','F','R'],unique:false}, //Admited, Pending, Fill missing, Rejected
-})
-
-applicationSchema.pre('save', function(next) {
-	next();
-});
 /**
- * Check whether an application is already submitted
+ * Application Schema
+ * Processes student registration applications
+ * Status: A=Admitted, P=Pending, F=Fill missing, R=Rejected
  */
-applicationSchema.statics.checkApplicationExists = function(application, cb) {
-	this.findOne({
-		school_id: application.school_id,
-		user_id: application.user_id,
-	}, (err, application_exists) => {
-		cb(err, application_exists);
-	})
+const applicationSchema = new Schema({
+  school_id: { type: Schema.Types.ObjectId, required: false },
+  user_id:   { type: Schema.Types.ObjectId, required: true },
+  comment:   { type: String,                required: false },
+  year_o_s:  { type: Number,                required: false },
+  program:   { type: String,                required: false },
+  faculty:   { type: String,                required: true },
+  status:    { type: String,                required: true, enum: ['A', 'P', 'F', 'R'] },
+}, { timestamps: { createdAt: 'created_at' } });
+
+/**
+ * Check whether an application already exists for this user + school.
+ * Returns a Promise — use with async/await or .then()/.catch()
+ */
+applicationSchema.statics.checkApplicationExists = function (application) {
+  return this.findOne({
+    school_id: application.school_id,
+    user_id:   application.user_id,
+  });
 };
 
-const ApplicationDB = mongoose.model('Applications', applicationSchema);
-
-module.exports = ApplicationDB;
+module.exports = mongoose.model('Applications', applicationSchema);

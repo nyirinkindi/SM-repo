@@ -160,8 +160,12 @@ block append content
               button.btn.btn-sm.btn-primary(ng-click="updateClass()") Confirm
               button.btn.btn-sm.btn-warning(type='button', data-dismiss='modal') Cancel
 block append scripts
-  script(src="../js/MIT/MIT_sweetalert2.js", type="text/javascript")
+  script(src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js", type="text/javascript")
   script.
+    // SweetAlert2 v11 compat shim: expose legacy swal() API used below
+    if (typeof Swal !== 'undefined' && typeof swal === 'undefined') {
+      window.swal = function(opts) { return Swal.fire(opts); };
+    }
     var app =angular.module('eshuri_App', ['ngRoute', 'angularUtils.directives.dirPagination']);
     app
     .filter('toTermName', function() {
@@ -217,7 +221,7 @@ block append scripts
           $scope.getListClasses();
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data);
+          Notifier.danger(erreur.data || 'An error occurred');
         }); 
       }
       $scope.editClass = function(classe){
@@ -250,7 +254,7 @@ block append scripts
             $scope.getListClasses();
           })
           .catch(function(error){
-            Notifier.danger(error.data);
+            Notifier.danger(error.data || 'An error occurred');
           })
       }
       $scope.setClassTeacher=function(selectedClass){
@@ -266,7 +270,7 @@ block append scripts
             Notifier.success("Successfully set");
           })
           .catch(function(erreur){
-            Notifier.danger(erreur.data);
+            Notifier.danger(erreur.data || 'An error occurred');
           });
       }
       $scope.getListClasses = function(){
@@ -276,7 +280,7 @@ block append scripts
           $scope.classes = response.data;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data);
+          Notifier.danger(erreur.data || 'An error occurred');
         });
       }
       $scope.deleteClass = function(classe_id,classe_name){
@@ -307,7 +311,7 @@ block append scripts
               })
             })
             .catch(function(erreur){
-              Notifier.danger(erreur.data);
+              Notifier.danger(erreur.data || 'An error occurred');
             });
           });
       }
@@ -328,7 +332,7 @@ block append scripts
           $scope.programs =response.data.school_programs;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data);
+          Notifier.danger(erreur.data || 'An error occurred');
         }); 
       }
       $scope.loadSchoolList = function(){
@@ -339,7 +343,7 @@ block append scripts
           $scope.listSchools =response.data;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data);
+          Notifier.danger(erreur.data || 'An error occurred');
         }); 
       }
       $scope.getListCoursesAndPrograms = function(){
@@ -350,7 +354,7 @@ block append scripts
           $scope.options = response.data.programs;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data);
+          Notifier.danger(erreur.data || 'An error occurred');
         });
       }
       $scope.set_Option =function(){
@@ -368,7 +372,7 @@ block append scripts
           setTimeout(()=>{$window.location.href="/dashboard"},2000)
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data);
+          Notifier.danger(erreur.data || 'An error occurred');
         }); 
       }
       $scope.getTerms_Limit = function(){
@@ -381,7 +385,7 @@ block append scripts
           $scope.allteachers = response.data;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data);
+          Notifier.danger(erreur.data || 'An error occurred');
         });
       }
       $scope.show_class_name=false;
