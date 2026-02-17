@@ -9,7 +9,7 @@ const schoolController = require('../controllers/school');
 const auth = require('../middlewares/auth.middleware');
 
 // DEBUG: Check which controller methods exist
-console.log('\n🔍 Checking school controller methods:');
+console.log('\nðŸ” Checking school controller methods:');
 const requiredMethods = [
   'getPageSchool',
   'homepageSchool', 
@@ -30,7 +30,7 @@ const requiredMethods = [
 
 requiredMethods.forEach(method => {
   const exists = typeof schoolController[method] === 'function';
-  console.log(`  ${exists ? '✓' : '❌'} ${method}: ${exists ? 'exists' : 'MISSING'}`);
+  console.log(`  ${exists ? 'âœ“' : 'âŒ'} ${method}: ${exists ? 'exists' : 'MISSING'}`);
 });
 console.log('');
 
@@ -193,6 +193,18 @@ router.post('/student/remove',
   schoolController.removeStudent
 );
 
+// Set class teacher (used by add_classe.pug)
+router.post('/class/teacher/set',
+  auth.isAtLeastAdmin,
+  require('../controllers/classe').setClassTeacher
+);
+
+// Set HOD option session (used by add_classe.pug)
+router.get('/option/set/:option_id',
+  auth.isAuthenticated,
+  require('../controllers/department').setNewOption
+);
+
 // ========== TEACHERS & ADMINS ==========
 
 // Get teachers list (JSON)
@@ -333,7 +345,7 @@ router.post('/info/add',
 router.get('/', 
   auth.isAuthenticated, 
   (req, res) => {
-    console.log('🏠 Root school route - redirecting to user school');
+    console.log('ðŸ  Root school route - redirecting to user school');
     return res.redirect("/school/" + req.user.school_id);
   }
 );
@@ -341,14 +353,14 @@ router.get('/',
 router.get('/:school_id',  
   auth.isAuthenticated, 
   (req, res, next) => {
-    console.log('🎯 Catch-all school route hit');
+    console.log('ðŸŽ¯ Catch-all school route hit');
     console.log('   URL:', req.originalUrl);
     console.log('   Param:', req.params.school_id);
     
     // Call the actual controller
     return schoolController.homepageSchool(req, res, next);
   }
-);  // ✅ Just closing parenthesis and semicolon
+);  // âœ… Just closing parenthesis and semicolon
 
 // Temporary debug route - add this near the top, after other routes
 router.get('/debug/all-schools', 

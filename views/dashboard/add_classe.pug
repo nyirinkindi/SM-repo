@@ -185,12 +185,14 @@ block append scripts
       }
     })
     .filter('toTeacher_name', function(){
-      return function(input,list_teachers){
-        if(input==''||!input) return 'Not defined';
-        for(var i =0;i < list_teachers.length;i++){
-          if(list_teachers[i]._id == input) return list_teachers[i].name
+      return function(input, list_teachers){
+        if (!input || input === '') return 'Not defined';
+        if (!list_teachers || !list_teachers.length) return 'Loading...';
+        for (var i = 0; i < list_teachers.length; i++){
+          if (list_teachers[i]._id == input) return list_teachers[i].name;
         }
-      }
+        return 'Not defined';
+      };
     })
     .controller('school_updateCtrl', function($scope,$http,$window){
       $scope.levels=[1,2,3,4,5,6];
@@ -213,7 +215,7 @@ block append scripts
         $scope.newClass._csrf =$scope.anti_csrf;
         $scope.newClass.school_id =$scope.school_id;
         $http
-        .post("/class.add",$scope.newClass)
+        .post("/classe/add",$scope.newClass)
         .then(function(response){
           Notifier.success('S'+$scope.newClass.name+" has been added to the school");
           $scope.newClass =null;
@@ -246,7 +248,7 @@ block append scripts
         $scope.thisClasse.classe_id=$scope.school_id;
         $scope.thisClasse.name=$scope.name
         $http
-          .post('/classe.edit', $scope.thisClasse)
+          .post('/classe/edit', $scope.thisClasse)
           .then(function(response){
             Notifier.success('S'+$scope.thisClasse.name+" has been modified");
             //- $scope.thisClasse =null;
@@ -262,7 +264,7 @@ block append scripts
         $scope.this_class=selectedClass._id;
       }
       $scope.setTeacher=function(classe, teacher){
-        $http.post('/set.class.teacher',{_csrf:$scope.anti_csrf,class_id:classe, teacher_id:teacher,school_id:$scope.school_id})
+        $http.post('/school/class/teacher/set',{_csrf:$scope.anti_csrf,class_id:classe, teacher_id:teacher,school_id:$scope.school_id})
           .then(function(response){
             $scope.getListClasses();
             $scope.teacher_choosen=null;
@@ -275,7 +277,7 @@ block append scripts
       }
       $scope.getListClasses = function(){
         $http
-        .get("/classe.list/"+$scope.school_id)
+        .get("/classe/list/"+$scope.school_id)
         .then(function(response){
           $scope.classes = response.data;
         })
@@ -298,7 +300,7 @@ block append scripts
             buttonsStyling: false
           }).then(function(){
               $http
-            .post("/classe.delete",{_csrf:$scope.anti_csrf,classe_id:classe_id,confirmPass:$("#confirmPass").val(),school_id:$scope.school_id,
+            .post("/classe/delete",{_csrf:$scope.anti_csrf,classe_id:classe_id,confirmPass:$("#confirmPass").val(),school_id:$scope.school_id,
              })
             .then(function(response){
               $scope.getListClasses();
@@ -317,7 +319,7 @@ block append scripts
       }
       $scope.load_SchoolContent = function(){
         $http
-        .get("/school.content.list/"+$scope.school_id)
+        .get("/school/data/"+$scope.school_id)
         .then(function(response){
           $scope.lists = response.data[0].list;
           
@@ -338,7 +340,7 @@ block append scripts
       $scope.loadSchoolList = function(){
         if(!$scope.department_id) return;
         $http
-        .get("/option.list/"+$scope.department_id)
+        .get("/school/options/"+$scope.department_id)
         .then(function(response){
           $scope.listSchools =response.data;
         })
@@ -348,7 +350,7 @@ block append scripts
       }
       $scope.getListCoursesAndPrograms = function(){
         $http
-        .get("/school.courseAndProgram.list/#{school_id}")
+        .get("/school/courses-programs/"+$scope.school_id)
         .then(function(response){
           //- $scope.courses = response.data.courses;
           $scope.options = response.data.programs;
@@ -360,7 +362,7 @@ block append scripts
       $scope.set_Option =function(){
         if(!$scope.department_id) return;
         $http
-        .get("/option.set/"+$scope.currentSchool)
+        .get("/school/option/set/"+$scope.currentSchool)
         .then(function(response){
           swal({
             title: 'Option has been succcessfully changed !',
@@ -380,7 +382,7 @@ block append scripts
       }
       $scope.loadTeachers = function(){
         $http
-        .get("/school.teachers.list/"+$scope.school_id)
+        .get("/school/teachers/"+$scope.school_id)
         .then(function(response){
           $scope.allteachers = response.data;
         })
