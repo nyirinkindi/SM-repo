@@ -14,6 +14,7 @@ const Classe = require('../models/Classe');
 const Finalist = require('../models/Finalist');
 const Message = require('../models/Message');
 const log_err = require('./manage/errorLogger');
+const async = require('async');
 
 // ========== HELPER FUNCTIONS ==========
 
@@ -140,13 +141,13 @@ exports.getSchoolProfile = async (req, res, next) => {
     let img_path = schoolExists && schoolExists.cover_photo ? schoolExists.cover_photo : "schoo_default.png";
     let file_location = picture_location + "/" + img_path;
     
-    const fs = require("fs").promises;
-    try {
-      await fs.access(file_location, require("fs").constants.F_OK | require("fs").constants.R_OK);
-    } catch {
-      file_location = picture_location + "/schoo_default.png";
-    }
-    return res.sendFile(file_location);
+    const fs = require("fs");
+    fs.access(file_location, fs.constants.F_OK | fs.constants.R_OK, (err) => {
+      if (err) {
+        file_location = picture_location + "/schoo_default.png";
+      }
+      return res.sendFile(file_location);
+    });
   } catch (err) {
     console.log("Error picture " + err);
     return res.sendFile(picture_location + "/schoo_default.png");
@@ -251,9 +252,10 @@ exports.changeSchoolProfile = (req, res, next) => {
       
       if ((oldPic !== schoolExists.cover_photo) && oldPic) {
         const fileToDelete = process.env.SCHOOL_PIC_PATH + "/" + oldPic;
-        require("fs").promises.unlink(fileToDelete)
-          .then(() => console.log("===>>Success AKIMANA "))
-          .catch((err) => console.log("===>>DELETION ERROR " + err));
+        require("fs").unlink(fileToDelete, (err) => {
+          if (err) console.log("===>>DELETION ERROR " + err);
+          console.log("===>>Success AKIMANA ");
+        });
       }
       return res.redirect("back");
     } catch (err) {
@@ -798,13 +800,15 @@ exports.editStudent = async (req, res, next) => {
     if (userDetails.email === req.user.email) return res.status(400).send("Change your password using platform setting");
     if (userDetails.access_level <= req.user.access_level) return res.status(400).send("User password has not reset");
 
-    await new Notification({
+    new Notification({
       user_id: req.body.student_id,
       user_name: userDetails.name,
       content: "Your password has reset to " + req.app.locals.defaultPwd + ". Please change it as long as you access the platform",
       school_id: userDetails.school_id,
       isAuto: false,
-    }).save().catch((err) => console.log(" You have to log " + err));
+    }).save((err) => {
+      if (err) console.log(" You have to log " + err);
+    });
 
     userDetails.name = req.body.name;
     userDetails.email = userDetails.email;
@@ -849,7 +853,9 @@ exports.removeStudent = async function(req, res, next) {
     await studentExists.deleteOne();
 
     if (hasProfilPic) {
-      require('fs').promises.unlink(profile_pic).catch(() => {});
+      require('fs').unlink(profile_pic, (err) => {
+        // File deleted or error logged
+      });
     }
     
     return res.end();
@@ -1383,13 +1389,13 @@ exports.getSchoolData = async (req, res, next) => {
     theData.push({ classes: classe_list });
 
     theData[0].list.push(
-      { type: 'New accounts to confirm', number: newAccountsCount, url: '/dashboard.accounts.validation' + linkParams, icon: 'verified_user' },
-      { type: 'Teachers', number: num_teachers, url: '/dashboard.teachers/' + schoolId + linkParams, icon: 'person' },
-      { type: 'Administrators', number: num_admins, url: '/dashboard.admins/' + schoolId + linkParams, icon: 'supervisor_account' },
-      { type: 'Students', number: num_students, url: '/school.students/' + schoolId + linkParams, icon: 'person' },
-      { type: 'Courses', number: num_school_courses, url: '/dashboard.register.course/' + schoolId + linkParams, icon: 'class' },
-      { type: program_name, number: num_school_programs, url: '/dashboard.register.course/' + schoolId + linkParams, icon: 'class' },
-      { type: 'Alumni', number: num_finalists, url: '/finalists/' + schoolId + linkParams, icon: 'person' }
+      { type: 'New accounts to confirm', number: newAccountsCount, url: '/dashboard/accounts/validation' + linkParams, icon: 'verified_user' },
+      { type: 'Teachers', number: num_teachers, url: '/dashboard/teachers/' + schoolId + linkParams, icon: 'person' },
+      { type: 'Administrators', number: num_admins, url: '/dashboard/admins/' + schoolId + linkParams, icon: 'supervisor_account' },
+      { type: 'Students', number: num_students, url: '/school/students/' + schoolId + linkParams, icon: 'person' },
+      { type: 'Courses', number: num_school_courses, url: '/dashboard/register/course/' + schoolId + linkParams, icon: 'class' },
+      { type: program_name, number: num_school_programs, url: '/dashboard/register/course/' + schoolId + linkParams, icon: 'class' },
+      { type: 'Alumni', number: num_finalists, url: '/school/finalists/' + schoolId + linkParams, icon: 'person' }
     );
 
     if (req.user.access_level === req.app.locals.access_level.SUPERADMIN) {
