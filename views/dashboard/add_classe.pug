@@ -195,6 +195,24 @@ block append scripts
       };
     })
     .controller('school_updateCtrl', function($scope,$http,$window){
+      // Inline notification helper to avoid dependency injection issues
+      var notify = {
+        success: function(msg) {
+          if (typeof $.notify !== 'undefined') {
+            $.notify({ message: msg }, { type: 'success', timer: 3000, placement: { from: 'top', align: 'right' } });
+          } else {
+            console.log('Success:', msg);
+          }
+        },
+        danger: function(msg) {
+          if (typeof $.notify !== 'undefined') {
+            $.notify({ message: msg }, { type: 'danger', timer: 5000, placement: { from: 'top', align: 'right' } });
+          } else {
+            console.error('Error:', msg);
+          }
+        }
+      };
+      
       $scope.levels=[1,2,3,4,5,6];
       $scope.slevels=['','a','b','c','d']
       $scope.showOption = function(level){
@@ -211,19 +229,19 @@ block append scripts
       }
       $scope.addClasse = function(){
         $scope.showClassName();
-        if(!$scope.newClass) return Notifier.danger('You can\'t save class that has no name');
+        if(!$scope.newClass) return notify.danger('You can\'t save class that has no name');
         $scope.newClass._csrf =$scope.anti_csrf;
         $scope.newClass.school_id =$scope.school_id;
         $http
         .post("/classe/add",$scope.newClass)
         .then(function(response){
-          Notifier.success('S'+$scope.newClass.name+" has been added to the school");
+          notify.success('S'+$scope.newClass.name+" has been added to the school");
           $scope.newClass =null;
           $scope.show_class_name=false;
           $scope.getListClasses();
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data || 'An error occurred');
+          notify.danger(erreur.data || 'An error occurred');
         }); 
       }
       $scope.editClass = function(classe){
@@ -244,19 +262,18 @@ block append scripts
         $scope.thisClasse.level=$scope.level;
         $scope.thisClasse.option=$scope.option;
         $scope.thisClasse.sub_level=$scope.sub_level;
-        $scope.thisClasse.classe_id=$scope.classe_id;
-        $scope.thisClasse.classe_id=$scope.school_id;
+        $scope.thisClasse.classe_id=$scope.classe_id;  // BUG WAS HERE: next line overwrote this
+        $scope.thisClasse.school_id=$scope.school_id;  // FIXED: use school_id, not classe_id
         $scope.thisClasse.name=$scope.name
         $http
           .post('/classe/edit', $scope.thisClasse)
           .then(function(response){
-            Notifier.success('S'+$scope.thisClasse.name+" has been modified");
-            //- $scope.thisClasse =null;
+            notify.success('S'+$scope.thisClasse.name+" has been modified");
             $('#edit_class_Modal').modal('hide');
             $scope.getListClasses();
           })
           .catch(function(error){
-            Notifier.danger(error.data || 'An error occurred');
+            notify.danger(error.data || 'An error occurred');
           })
       }
       $scope.setClassTeacher=function(selectedClass){
@@ -269,10 +286,10 @@ block append scripts
             $scope.getListClasses();
             $scope.teacher_choosen=null;
             $('#set_class_teacher_Modal').modal('hide');
-            Notifier.success("Successfully set");
+            notify.success("Successfully set");
           })
           .catch(function(erreur){
-            Notifier.danger(erreur.data || 'An error occurred');
+            notify.danger(erreur.data || 'An error occurred');
           });
       }
       $scope.getListClasses = function(){
@@ -282,45 +299,34 @@ block append scripts
           $scope.classes = response.data;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data || 'An error occurred');
+          notify.danger(erreur.data || 'An error occurred');
         });
       }
-      $scope.deleteClass = function(classe_id,classe_name){
-        swal({
-            title: 'Do you want to delete \n<i style="color:red">'+classe_name.toUpperCase()+'</i> \n ?',
-            text: "You will not be able to revert this!",
-            html:'<div class="form-group"><label> Type your password please</label>'+
-              '<input id="confirmPass" type="password" class="form-control" />'+
-            '</div> <span class="category"> This action cannot be reverted !</span>',
-            type: 'warning',
-            showCancelButton: true,
-            confirmButtonClass: 'btn btn-success',
-            cancelButtonClass: 'btn btn-danger',
-            confirmButtonText: 'Yes, delete it!',
-            buttonsStyling: false
-          }).then(function(result){
-              // SweetAlert2 v11: check if confirmed (not dismissed)
-              if (!result.value && !result.isConfirmed) return;
-              
-              $http
-            .post("/classe/delete",{_csrf:$scope.anti_csrf,classe_id:classe_id,confirmPass:$("#confirmPass").val(),school_id:$scope.school_id,
-             })
-            .then(function(response){
-              $scope.getListClasses();
-              swal({
-                title: 'Deleted!',
-                text: classe_name+' has been deleted.',
-                type: 'success',
-                confirmButtonClass: "btn btn-success",
-                buttonsStyling: false
-              })
-            })
-            .catch(function(erreur){
-              Notifier.danger(erreur.data || 'An error occurred');
-            });
-          }).catch(function(dismiss){
-            // User cancelled or dismissed — do nothing
-          });
+      $scope.deleteClass = function(classe_id, classe_name){
+        console.log('deleteClass called:', classe_id, classe_name);
+        
+        // Simplified version without SweetAlert to isolate the error
+        var password = prompt('Enter your password to delete class ' + classe_name.toUpperCase() + ':');
+        if (!password) {
+          console.log('User cancelled');
+          return;
+        }
+        
+        $http.post("/classe/delete", {
+          _csrf: $scope.anti_csrf,
+          classe_id: classe_id,
+          confirmPass: password,
+          school_id: $scope.school_id
+        })
+        .then(function(response){
+          console.log('Delete successful');
+          $scope.getListClasses();
+          alert('Class ' + classe_name + ' has been deleted.');
+        })
+        .catch(function(erreur){
+          console.error('Delete error:', erreur);
+          notify.danger(erreur.data || 'An error occurred');
+        });
       }
       $scope.load_SchoolContent = function(){
         $http
@@ -339,7 +345,7 @@ block append scripts
           $scope.programs =response.data.school_programs;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data || 'An error occurred');
+          notify.danger(erreur.data || 'An error occurred');
         }); 
       }
       $scope.loadSchoolList = function(){
@@ -350,7 +356,7 @@ block append scripts
           $scope.listSchools =response.data;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data || 'An error occurred');
+          notify.danger(erreur.data || 'An error occurred');
         }); 
       }
       $scope.getListCoursesAndPrograms = function(){
@@ -361,7 +367,7 @@ block append scripts
           $scope.options = response.data.programs;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data || 'An error occurred');
+          notify.danger(erreur.data || 'An error occurred');
         });
       }
       $scope.set_Option =function(){
@@ -379,7 +385,7 @@ block append scripts
           setTimeout(()=>{$window.location.href="/dashboard"},2000)
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data || 'An error occurred');
+          notify.danger(erreur.data || 'An error occurred');
         }); 
       }
       $scope.getTerms_Limit = function(){
@@ -392,17 +398,20 @@ block append scripts
           $scope.allteachers = response.data;
         })
         .catch(function(erreur){
-          Notifier.danger(erreur.data || 'An error occurred');
+          notify.danger(erreur.data || 'An error occurred');
         });
       }
       $scope.show_class_name=false;
-      $scope.getListCoursesAndPrograms();
       $scope.pages=[3,5,10,15,20,25];
+      // Initialize server-side values FIRST before calling any functions
       $scope.anti_csrf ="#{csrf_token}";
       $scope.school_id ="#{school_id}";
       $scope.department_id ="#{department_id}";
       $scope.term_quantity ="#{term_quantity}";
       $scope.term_name ="#{term_name}";
+      
+      // Now call functions that depend on school_id being set
+      $scope.getListCoursesAndPrograms();
       if($scope.department_id) $scope.loadSchoolList();
       $scope.load_SchoolContent();
       $scope.loadTeachers();
