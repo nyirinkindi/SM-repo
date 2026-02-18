@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const universityController = require('../controllers/university');
-const auth = require('../middleware/auth.middleware');
+const auth = require('../middlewares/auth.middleware');
 
 // ========== UNIVERSITY PAGES ==========
 

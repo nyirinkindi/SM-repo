@@ -298,7 +298,10 @@ block append scripts
             cancelButtonClass: 'btn btn-danger',
             confirmButtonText: 'Yes, delete it!',
             buttonsStyling: false
-          }).then(function(){
+          }).then(function(result){
+              // SweetAlert2 v11: check if confirmed (not dismissed)
+              if (!result.value && !result.isConfirmed) return;
+              
               $http
             .post("/classe/delete",{_csrf:$scope.anti_csrf,classe_id:classe_id,confirmPass:$("#confirmPass").val(),school_id:$scope.school_id,
              })
@@ -315,6 +318,8 @@ block append scripts
             .catch(function(erreur){
               Notifier.danger(erreur.data || 'An error occurred');
             });
+          }).catch(function(dismiss){
+            // User cancelled or dismissed — do nothing
           });
       }
       $scope.load_SchoolContent = function(){
