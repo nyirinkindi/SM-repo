@@ -1,7 +1,7 @@
 extends ../../layout
 block append css_code
-	link(rel="stylesheet", type="text/css", href="../css/simplemde.min.css")
-	link(rel="stylesheet", type="text/css", href="../css/font-awesome470/css/font-awesome.min.css")
+	link(rel="stylesheet", type="text/css", href="/css/simplemde.min.css")
+	link(rel="stylesheet", type="text/css", href="/css/font-awesome470/css/font-awesome.min.css")
 block append content 
 	//- .main-panel
 		include ../../partials/header 
@@ -26,8 +26,8 @@ block append content
 												a.label.btn.btn-fill.btn-danger.pull-right(href="/courses/"+course_id) Cancel
 
 block append scripts
-	script(src="../js/MIT/MIT_sweetalert2.js", type="text/javascript")
-	script(src="../js/simplemde.min.js", type="text/javascript")
+	script(src="/js/MIT/MIT_sweetalert2.js", type="text/javascript")
+	script(src="/js/simplemde.min.js", type="text/javascript")
 	script.
 		var app =angular.module('eshuri_App', ['ngRoute']);
 		app

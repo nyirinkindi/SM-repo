@@ -25,12 +25,12 @@ block append content
 
 
 block append scripts
-    script(src="../js/MIT/MIT_sweetalert2.js", type="text/javascript")
-    script(src="../js/MIT/jquery.bootstrap-wizard.js", type="text/javascript")
-    script(src="../js/MIT/init_wizard.js", type="text/javascript")
-    script(src="../js/MIT/jquery.validate.min.js", type="text/javascript")
-    script(src="../homejs/ng-file-upload.min.js")
-    script(src="../homejs/ng-file-upload-shim.min.js")
+    script(src="/js/MIT/MIT_sweetalert2.js", type="text/javascript")
+    script(src="/js/MIT/jquery.bootstrap-wizard.js", type="text/javascript")
+    script(src="/js/MIT/init_wizard.js", type="text/javascript")
+    script(src="/js/MIT/jquery.validate.min.js", type="text/javascript")
+    script(src="/homejs/ng-file-upload.min.js")
+    script(src="/homejs/ng-file-upload-shim.min.js")
     script.
         var app = angular.module('eshuri_App', ['ngRoute', 'ngStorage', 'ngFileUpload']);
         app.controller('paymentCtrl', function($scope, $http, $window, $localStorage){

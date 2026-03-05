@@ -1,0 +1,44 @@
+extends ../layout
+
+block append content
+  .main-panel
+    .content(style="padding: 50px;")
+      .container-fluid
+        h1 Pug Variable Interpolation Test
+        
+        hr
+        
+        h3 Direct Output (should show school_id value):
+        p School ID: ${school_id}
+        p Test Value: #{test_value}
+        
+        hr
+        
+        h3 In href attribute (should show actual ID):
+        p
+          a(href="/school/finalists/${school_id}") Link to Finalists
+        
+        hr
+        
+        h3 Using != for unescaped:
+        p School ID: !{school_id}
+        
+        hr
+        
+        h3 JavaScript variable (in script tag):
+        script.
+          console.log('School ID from Pug:', '${school_id}');
+          console.log('Test Value:', '#{test_value}');
+        
+        hr
+        
+        h3 Raw HTML Source (View Page Source to verify):
+        p Copy the HTML source and check if ${school_id} is replaced
+        
+        hr
+        
+        h3 Actual Links to Test:
+        ul
+          li: a(href="/school/finalists/${school_id}") Finalists
+          li: a(href="/dashboard/classe/${school_id}") Classes  
+          li: a(href="/school/students/${school_id}") Students

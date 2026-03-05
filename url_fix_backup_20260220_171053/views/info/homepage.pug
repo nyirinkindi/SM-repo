@@ -1,0 +1,206 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='utf-8')
+    title eShuri Learning Management System
+    meta(name='viewport', content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0')
+    meta(http-equiv='X-UA-Compatible', content='IE=edge,chrome=1')
+    - var access = access_lvl
+    link(rel='shortcut icon', href='/favicon.png')
+
+    //- Stylesheets
+    link(rel='stylesheet', href='/css/fontcss/font-awesome.min.css')
+    link(rel='stylesheet', href='/css/bootstrap.min.css')
+    link(rel='stylesheet', href='/css/style.css')
+    link(rel='stylesheet', href='/css/fontcss/fontsicon.css')
+    link(rel='stylesheet', href='/css/fontcss/robotocss.css')
+    link(rel='stylesheet', href='/css/material-kit.css')
+    link(rel='stylesheet', href='/css/monStyleHome.css')
+
+  body(style="background-color: rgba(1, 1, 1, 0.03)")
+    //- Header Section
+    header#header
+      .container
+        #logo.pull-left
+          a(href='#hero')
+            h2
+              b
+                span(style='color:#4CAF50;border:solid 1px #fff;border-radius:3px;font-weight:700;font-family:Times New Roman;') eShuri Platform
+                    
+        nav#nav-menu-container(style='top:23%')
+          ul.nav-menu 
+            li.menu-active
+              .navbar-form(role='search')
+                .input-group
+                  input#srch-term.form-control(type='text', placeholder='Search', name='srch-term')
+                  .input-group-btn
+                    button.btn.btn-sm.btn-default
+                      i.fa.fa-search
+            li.menu-active
+              a(href='/home') Home
+            li
+              a(href='#features') Features
+            li
+              a(href='#vision') Vision
+            li
+              a(href='https://www.youtube.com/watch?v=RSHB1ylo0-U', target='_blank') Watch video
+            if (!access)
+              li
+                a(href='/auth/signin') Sign in
+              li
+                a(href='/auth/signup') Sign up
+
+    //- Hero Section
+    section#hero
+      .hero-container
+        .wow.fadeIn
+          h1(style='color:#4CAF50;') eShuri Platform
+          h2(style='color:#ffffff;')
+            | Experience the best of eLearning at your school. 
+            br
+            span.rotating(style='color:#ffffff;')
+              | eShuri is a cloud repository of academic contents that uses interactive methodologies in distributing online courses and by offering flexibility to take classes at home.
+          .row
+            .col-md-6
+              h2
+                a.btn.btn-success.btn-lg(style="background-color:#2196F3;border-color:#2196F3")(href='https://www.microsoft.com/store/apps/9PJ798LP9BH1', target='_blank')
+                  i.fa.fa-cloud-download
+                  |  Download app
+            .col-md-6
+              h2
+                a.btn.btn-primary.btn-rose.btn-lg(href='/home')
+                  i.fa.fa-gears
+                  |  Start
+
+    //- Features Section
+    section#features.text-center
+      .container.wow.fadeInUp
+        .row
+          .col-md-12
+            h3.section-title(style='color:#4CAF50;') Features
+            .section-title-divider
+            h4.text-center
+              | eShuri digital contents can be used to motivate students, improve conceptual understanding and retention of key topics. 
+              br
+              |  eShuri carries innovative features that will help high-schools and universities in their daily activities by offering:
+
+        .row
+          .col-md-4
+            .info
+              .icon(style='color:#4CAF50;')
+                i.material-icons class
+              h4.info-title Virtual classes
+              p SMART CLASSROOMS / LIVE CLASSROOMS
+
+          .col-md-4
+            .info
+              .icon(style='color:#4CAF50;')
+                i.material-icons fingerprint
+              h4.info-title Interactive learning methodologies
+              p MULTI-MEDIA GRAPHICS, VIDEOS, TESTS AND REPORTS
+
+          .col-md-4
+            .info
+              .icon(style='color:#4CAF50;')
+                i.material-icons people
+              h4.info-title Parent engagement
+              p REALTIME PERFORMANCE ANALYSIS
+
+          .col-md-4
+            .info
+              .icon(style='color:#4CAF50;')
+                i.material-icons cloud_circle
+              h4.info-title Effective management of the education sector
+              p INFORMED PRIORITIZATION & ALLOCATION OF RESOURCES
+
+          .col-md-4
+            .info
+              .icon(style='color:#4CAF50;')
+                i.material-icons data_usage
+              h4.info-title Real time collection of data
+              p IMPROVE DECISION MAKING
+
+          .col-md-4
+            .info
+              .icon(style='color:#4CAF50;')
+                i.material-icons verified_user
+              h4.info-title Strengthen teacher professional development
+              p CONTRIBUTING TO THE IMPROVEMENT OF QUALITY OF EDUCATION
+
+          .col-md-4
+            .info
+              .icon(style='color:#4CAF50;')
+                i.material-icons content_copy
+              h4.info-title Contents available offline
+              p AUTO SYNCHRONIZATION
+
+          .col-md-4
+            .info
+              .icon.icon-danger
+                i.material-icons school
+              h4.info-title All schools levels supported
+              p UNIVERSITIES, SECONDARY AND PRIMARY SCHOOLS
+
+          .col-md-4
+            .info
+              .icon.icon-danger
+                i.material-icons assessment
+              h4.info-title Simplify the use of regular assessments
+              p KEEP TRACK OF STUDENT PERFORMANCE
+
+    //- Vision Section
+    section#vision
+      .container.wow.fadeInUp
+        .row
+          .col-md-8.col-md-offset-2
+            h2.text-center.title Vision for ICT in education (MINEDUC)
+            h4.text-center.description
+              | "To harness the innovative and cost-effective potential of world-class educational technology tools and resources, for knowledge creation and deepening, to push out the boundaries of education: improve quality, increase access, enhance diversity of learning methods and materials, include new categories of learners, foster both communication and collaboration skills, and build capacity of all those involved in providing education."
+
+    //- Footer
+    footer.footer
+      .container
+        .row
+          nav.pull-left
+            ul
+              li
+                a(href='http://www.datasystems.rw') Future AI Limited
+              li
+                a(href='http://datasystems.rw') About Us
+              li
+                a(href='http://datasystems.rw') Blog
+              li
+                a(href='http://datasystems.rw') Licenses
+          .copyright.pull-right
+            | © Copyrights 2015-#{new Date().getFullYear()}.  
+            a(href='http://www.datasystems.rw' style='color:#ffffff;') Future Ai Ltd
+            | . All Rights Reserved
+
+        .row
+          h5
+            | Follow us on: 
+            a(href='https://www.facebook.com/eShuri.rw/' target='_blank' style='color:#ffffff;')
+              i.fa.fa-facebook
+              |  Facebook | 
+            a(href='https://www.instagram.com/eShuri.rw/' target='_blank' style='color:#ffffff;')
+              i.fa.fa-instagram
+              |  Instagram | 
+            a(href='https://twitter.com/GiraICTrw' target='_blank' style='color:#ffffff;')
+              i.fa.fa-twitter
+              |  Twitter
+
+    //- Back to top button
+    a.back-to-top(href='#')
+      i.fa.fa-chevron-up
+
+    //- JavaScript Libraries
+    script(src='/js/homejs/jquery-3.2.1.min.js')
+    script(src='/js/homejs/jquery-migrate.min.js')
+    script(src='/js/homejs/bootstrap-3.3.7.min.js')
+    script(src='/js/homejs/hoverIntent.js')
+    script(src='/js/homejs/superfish.min.js')
+    script(src='/js/homejs/morphext.min.js')
+    script(src='/js/homejs/wow.min.js')
+    script(src='/js/homejs/sticky.js')
+    script(src='/js/homejs/easing.min.js')
+    script(src='/js/homejs/custom.js')
